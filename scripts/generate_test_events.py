@@ -19,6 +19,8 @@ Vi du:
 import argparse
 import json
 import random
+import sys
+import time
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -91,7 +93,10 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--type", choices=EVENT_TYPES, required=True)
     p.add_argument("--machines", type=int, default=10)
-    p.add_argument("--seconds", type=int, default=60, help="khoang thoi gian mo phong (lui ve tu hien tai)")
+    p.add_argument("--seconds", type=int, default=60,
+                   help="khoang thoi gian mo phong (lui ve tu hien tai); voi --live: so giay chay, 0 = mai mai")
+    p.add_argument("--live", action="store_true",
+                   help="phat event theo thoi gian thuc (event time = hien tai), flush tung giay")
     p.add_argument("--rate", type=float, default=1.0, help="event / giay / may")
     p.add_argument("--dup-rate", type=float, default=0.02)
     p.add_argument("--missing-rate", type=float, default=0.02)
@@ -102,17 +107,31 @@ def main():
 
     rng = random.Random(f"{args.seed}-{args.type}")
     event_type, source = EVENT_TYPES[args.type]
-    now = datetime.now(timezone.utc)
-    start = now - timedelta(seconds=args.seconds)
     states = {m: {"status": "RUNNING"} for m in range(1, args.machines + 1)}
-    n = int(args.seconds * args.rate)
 
-    for i in range(n):
-        base_ts = start + timedelta(seconds=i / args.rate)
+    if args.live:
+        t0 = time.time()
+        def ticks():
+            i = 0
+            while args.seconds == 0 or i < args.seconds * args.rate:
+                time.sleep(max(0.0, t0 + i / args.rate - time.time()))
+                yield datetime.now(timezone.utc)
+                i += 1
+    else:
+        start = datetime.now(timezone.utc) - timedelta(seconds=args.seconds)
+        def ticks():
+            for i in range(int(args.seconds * args.rate)):
+                yield start + timedelta(seconds=i / args.rate)
+
+    for base_ts in ticks():
         for m in range(1, args.machines + 1):
             machine_id = f"M{m:03d}"
-            ts = base_ts + timedelta(milliseconds=rng.randint(0, 900))
-            ingested = ts + timedelta(milliseconds=rng.randint(5, 80))  # middleware nhan event
+            if args.live:   # event vua phat sinh, middleware nhan sau vai chuc ms
+                ingested = datetime.now(timezone.utc)
+                ts = ingested - timedelta(milliseconds=rng.randint(5, 80))
+            else:
+                ts = base_ts + timedelta(milliseconds=rng.randint(0, 900))
+                ingested = ts + timedelta(milliseconds=rng.randint(5, 80))
             if rng.random() < args.late_rate:
                 ts -= timedelta(seconds=rng.randint(120, 300))
 
@@ -146,6 +165,8 @@ def main():
             print(line)
             if rng.random() < args.dup_rate:
                 print(line)
+        if args.live:
+            sys.stdout.flush()
 
 
 if __name__ == "__main__":

@@ -19,6 +19,7 @@ ADD --chmod=644 ${MAVEN}/com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk
 ADD --chmod=644 ${MAVEN}/org/postgresql/postgresql/42.7.4/postgresql-42.7.4.jar /opt/spark/jars/
 
 USER root
-RUN mkdir -p /opt/spark-apps /opt/spark/work && chown -R spark:spark /opt/spark/work
+RUN mkdir -p /opt/spark-apps /opt/spark/work /opt/spark-checkpoints \
+ && chown -R spark:spark /opt/spark/work /opt/spark-checkpoints
 USER spark
 WORKDIR /opt/spark

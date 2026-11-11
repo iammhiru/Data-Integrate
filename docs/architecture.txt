@@ -36,6 +36,8 @@ THAY ĐỔI SO VỚI PROPOSAL BAN ĐẦU
  Batch processing     Spark (batch, PySpark)        Tổng hợp lịch sử, OEE,
                                                     downtime, data quality
  Scheduler            cron / Airflow (tuỳ chọn)     Chạy batch job hourly/daily
+ Kafka UI             kafbat/kafka-ui               Xem topic, message, consumer
+                                                    group (localhost:8082)
  Raw storage          MinIO (S3 API, s3a://)        Data Lake, Parquet partition
                       image alpine/minio            (minio/minio da bi go khoi Docker Hub)
                                                     theo date/hour
@@ -218,17 +220,26 @@ THAY ĐỔI SO VỚI PROPOSAL BAN ĐẦU
  Checkpoint s3a://.../checkpoints/raw-ingest lưu offset -> at-least-once;
  bản ghi trùng do retry được batch job loại theo eventId.
 
-5.2 Luồng B - Realtime metrics (Spark Streaming, trigger 1-5 giây)
+5.2 Luồng B - Realtime metrics  [spark/apps/realtime_metrics.py, service stream-realtime]
 -------------------------------------------------------------------------------
  Kafka machine-telemetry + production-events
+   -> parse envelope, bỏ event thiếu eventId/machineId/timestamp
    -> withWatermark("eventTime", "30 seconds")
-   -> dropDuplicatesWithinWatermark("eventId")        (Spark >= 3.5)
-   -> window 5s / 1 phút group by machineId:
-        trạng thái mới nhất, avg temperature/pressure/speed, energy,
-        production rate = sum(quantity) / window
-   -> ghi Kafka `realtime-metrics` (update mode) -> .NET -> WebSocket -> UI
-   -> foreachBatch upsert PostgreSQL machine_status_current, machine_metric_1m
- Latency kỳ vọng: vài giây (micro-batch), phù hợp yêu cầu "gần thời gian thực".
+   -> dropDuplicatesWithinWatermark("eventId")
+   -> 3 query, output mode update (mỗi trigger phát giá trị mới nhất của window đang mở):
+      status_5s      window 5s / máy, trigger 5s:  status mới nhất, avg temperature/
+                     pressure/speed, sum energy, sampleCount, missingCount
+      metric_1m      window 1 phút / máy, trigger 30s
+      production_1m  window 1 phút / máy, trigger 5s: totalQty, good, reject,
+                     productionRate (sản phẩm/phút trên phần window đã trôi qua)
+   -> Kafka `realtime-metrics` (key machineId, field metricType) -> .NET -> WebSocket -> UI
+   -> upsert PostgreSQL: machine_status_current (chỉ ghi đè khi event_time mới hơn),
+      machine_metric_1m
+ State store RocksDB, checkpoint trên volume dùng chung /opt/spark-checkpoints.
+ Mỗi message có emittedAt, maxIngestedAt, latencyMs = emittedAt - maxIngestedAt
+ (scripts/measure_latency.py tính avg / p50 / p95 / max).
+ Event trễ hơn watermark (30s) bị bỏ khỏi realtime nhưng vẫn có trong raw -> batch
+ layer tính lại chính xác.
 
 5.3 Luồng C - Batch analytics (Spark Batch)  [spark/apps/minio_to_postgres.py]
  Đã cài đặt: production_metric, quality_metric, data_quality_metric.

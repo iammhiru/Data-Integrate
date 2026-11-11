@@ -12,7 +12,20 @@ x-spark-common: &spark-common
   volumes:
     - ./spark/conf/spark-defaults.conf:/opt/spark/conf/spark-defaults.conf:ro
     - ./spark/apps:/opt/spark-apps:ro
+    - spark-checkpoints:/opt/spark-checkpoints   # checkpoint/state store dung chung driver + executor
   networks: [smart-factory]
+
+x-spark-job: &spark-job
+  <<: *spark-common
+  profiles: ["streaming"]
+  restart: unless-stopped
+  depends_on:
+    spark-master:
+      condition: service_healthy
+    kafka:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
 
 services:
   # ---------------------------------------------------------------- Kafka (KRaft, 1 node)
@@ -38,6 +51,7 @@ services:
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: "-Xmx512m -Xms512m"
     volumes:
       - kafka-data:/var/lib/kafka/data
     healthcheck:
@@ -58,6 +72,21 @@ services:
       - ./docker/kafka/create-topics.sh:/create-topics.sh:ro
     entrypoint: ["/bin/bash", "/create-topics.sh"]
     restart: "no"
+    networks: [smart-factory]
+
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.5.0
+    container_name: kafka-ui
+    ports:
+      - "8082:8080"            # http://localhost:8082
+    environment:
+      KAFKA_CLUSTERS_0_NAME: smart-factory
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      DYNAMIC_CONFIG_ENABLED: "false"
+      JAVA_OPTS: "-Xmx256m"
+    depends_on:
+      kafka:
+        condition: service_healthy
     networks: [smart-factory]
 
   # ---------------------------------------------------------------- MinIO (Data Lake)
@@ -155,7 +184,36 @@ services:
       spark-master:
         condition: service_healthy
 
+  # ---------------------------------------------------------------- Streaming jobs (profile: streaming)
+  # docker compose --profile streaming up -d
+  # Driver chay trong container rieng (client mode), executor chay tren spark-worker.
+  stream-raw-ingest:
+    <<: *spark-job
+    container_name: stream-raw-ingest
+    hostname: stream-raw-ingest
+    command: ["/opt/spark/bin/spark-submit",
+              "--conf", "spark.cores.max=1", "--conf", "spark.driver.memory=512m",
+              "--conf", "spark.driver.host=stream-raw-ingest",
+              "/opt/spark-apps/kafka_to_minio.py", "--trigger", "1 minute"]
+    ports:
+      - "4041:4040"            # Spark UI cua job raw ingest
+
+  stream-realtime:
+    <<: *spark-job
+    container_name: stream-realtime
+    hostname: stream-realtime
+    command: ["/opt/spark/bin/spark-submit",
+              "--conf", "spark.cores.max=3", "--conf", "spark.driver.memory=512m",
+              "--conf", "spark.driver.host=stream-realtime",
+              "--conf", "spark.sql.shuffle.partitions=3",
+              "--conf", "spark.sql.streaming.stateStore.providerClass=org.apache.spark.sql.execution.streaming.state.RocksDBStateStoreProvider",
+              "--conf", "spark.sql.streaming.stateStore.rocksdb.changelogCheckpointing.enabled=true",
+              "/opt/spark-apps/realtime_metrics.py"]
+    ports:
+      - "4042:4040"            # Spark UI cua job realtime
+
 volumes:
+  spark-checkpoints:
   kafka-data:
   minio-data:
   postgres-data:

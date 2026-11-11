@@ -26,13 +26,16 @@ done
 dc ps --format 'table {{.Name}}\t{{.Status}}'
 
 step "1. Reset du lieu test"
+# streaming service dung chung topic/checkpoint -> dung lai truoc khi reset
+dc --profile streaming stop stream-raw-ingest stream-realtime >/dev/null 2>&1 || true
+dc run --rm --no-deps -T --entrypoint rm spark-master -rf /opt/spark-checkpoints/realtime >/dev/null 2>&1 || true
 for t in machine-telemetry production-events quality-events; do
   dc exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --delete --topic "$t" 2>/dev/null || true
 done
 sleep 3
 dc run --rm -T kafka-init >/dev/null
 s3 rm "s3://$MINIO_BUCKET" --recursive --quiet || true
-psql -q -c "TRUNCATE production_metric, quality_metric, data_quality_metric"
+psql -q -c "TRUNCATE production_metric, quality_metric, data_quality_metric, machine_status_current, machine_metric_1m"
 
 step "2. Sinh event va gui vao Kafka ($MACHINES may, $SECONDS_ giay)"
 for pair in telemetry:machine-telemetry:1 production:production-events:0.2 quality:quality-events:0.2; do
@@ -76,3 +79,5 @@ EOF
 )
 echo "  Spark = $SPARK_TOTAL | Reference = $REF_TOTAL"
 if [ "$SPARK_TOTAL" = "$REF_TOTAL" ]; then echo "  PASS"; else echo "  FAIL"; exit 1; fi
+echo
+echo "Streaming service da bi dung. Chay lai: docker compose --profile streaming up -d"
