@@ -1,0 +1,14 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0640,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,CODE.L02.MACHINESTATE,REALTIME
+MachineMode,K0650,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,CODE.L02.MACHINEMODE,REALTIME
+EmergencyStop,B0660,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,CODE.L02.EMERGENCYSTOP,REALTIME
+AlarmCode,K0670,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,CODE.L02.ALARMCODE,REALTIME
+CurrentSpeed,K0680,Float,1,R/W,500,,,,,,,,,pcs/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,CODE.L02.CURRENTSPEED,PERIODIC
+DesignSpeed,K0690,Float,1,R/W,500,,,,,,,,,pcs/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,CODE.L02.DESIGNSPEED,PERIODIC
+TotalCounter,K0700,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,CODE.L02.TOTALCOUNTER,PERIODIC
+DefectCounter,K0710,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,CODE.L02.DEFECTCOUNTER,PERIODIC
+PrintCount,K0720,Long,1,R/W,1000,,,,,,,,,pcs,So ma da in,,COUNTER,CODE.L02.PRINTCOUNT,PERIODIC
+InkLevel,K0730,Float,1,R/W,500,,,,,,,,,%,Muc muc in,,ANALOG,CODE.L02.INKLEVEL,PERIODIC
+InkLow,B0740,Boolean,1,R/W,100,,,,,,,,,-,True khi muc muc thap,,DIGITAL,CODE.L02.INKLOW,REALTIME
+PrintQuality,K0750,Int,1,R/W,100,,,,,,,,,-,Chat luong in (enum muc 0-2),,DIGITAL,CODE.L02.PRINTQUALITY,REALTIME
+NozzleHeight,K0760,Float,1,R/W,500,,,,,,,,,mm,Do cao voi phun,,ANALOG,CODE.L02.NOZZLEHEIGHT,PERIODIC

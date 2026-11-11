@@ -1,0 +1,21 @@
+# Normalize line endings — repo dùng LF, checkout trên Windows vẫn OK.
+* text=auto eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.docx binary
+*.xlsx binary
+*.zip binary
+
+# CSV metadata — giữ LF để diff sạch (Kepware đọc được cả LF và CRLF)
+*.csv text eol=lf
+
+# Python
+*.py text eol=lf
+
+# Markdown
+*.md text eol=lf

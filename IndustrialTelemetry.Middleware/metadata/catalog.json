@@ -1,0 +1,3904 @@
+{
+  "plantId": "PLANT_01",
+  "schemaVersion": "1.0",
+  "machines": [
+    {
+      "machineId": "L01_PREFEED_01",
+      "machineType": "PREFORM_FEEDER",
+      "equipmentCode": "PREF-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "PREFORM_FEEDING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "preform/min",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "preform/min",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "PREF.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "PREF.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "PREF.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "PreformFeedRate",
+          "dataType": "Float",
+          "unit": "preform/min",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L01.PREFORMFEEDRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tan suat cap preform thuc te"
+        },
+        {
+          "name": "HopperLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L01.HOPPERLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc thay the trong hopper"
+        },
+        {
+          "name": "HopperLevelLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L01.HOPPERLEVELLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi muc hopper duoi nguong can bo sung"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_BLOWER_01",
+      "machineType": "STRETCH_BLOW_MOULDER",
+      "equipmentCode": "BLOW-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "BLOW_MOULDING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "BLOW.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "BLOW.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "BLOW.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "CycleTime",
+          "dataType": "Float",
+          "unit": "s",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.CYCLETIME",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Thoi gian mot chu ky thoi chai"
+        },
+        {
+          "name": "BlowPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.BLOWPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat thoi trong khu thoi chai"
+        },
+        {
+          "name": "HeaterTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.HEATERTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do heater thoi PET"
+        },
+        {
+          "name": "MoldTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.MOLDTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do khuon"
+        },
+        {
+          "name": "CavityCount",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L01.CAVITYCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So khuon ep trong khuon"
+        },
+        {
+          "name": "BottleWeight",
+          "dataType": "Float",
+          "unit": "g",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.BOTTLEWEIGHT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Khoi luong chai rong"
+        },
+        {
+          "name": "PowerConsumption",
+          "dataType": "Float",
+          "unit": "kW",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L01.POWERCONSUMPTION",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Cong suat tieu thu tinh theo moc thoi gian"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_AIRCONV_01",
+      "machineType": "AIR_CONVEYOR",
+      "equipmentCode": "ACONV-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "BOTTLE_CONVEYING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "m/min",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "m/min",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "ACONV.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "ACONV.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "ACONV.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "AirPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L01.AIRPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat duong cap khi nen"
+        },
+        {
+          "name": "AirFlowRate",
+          "dataType": "Float",
+          "unit": "Nm3/h",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L01.AIRFLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong khi nen"
+        },
+        {
+          "name": "MotorSpeed",
+          "dataType": "Float",
+          "unit": "rpm",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L01.MOTORSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do dong co hanh"
+        },
+        {
+          "name": "PowerConsumption",
+          "dataType": "Float",
+          "unit": "kW",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L01.POWERCONSUMPTION",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Cong suat tieu thu"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_RINSER_01",
+      "machineType": "BOTTLE_RINSER",
+      "equipmentCode": "RINSE-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "RINSING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "RinseWaterPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L01.RINSEWATERPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat nuoc rua"
+        },
+        {
+          "name": "RinseWaterTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L01.RINSEWATERTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do nuoc rua"
+        },
+        {
+          "name": "RinseWaterFlowRate",
+          "dataType": "Float",
+          "unit": "m3/h",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L01.RINSEWATERFLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong nuoc rua"
+        },
+        {
+          "name": "NozzlePressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L01.NOZZLEPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat vo phun"
+        },
+        {
+          "name": "CIPPhase",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L01.CIPPHASE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Pha CIP hien tai (enum muc 0-4)"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_FILLER_01",
+      "machineType": "CARBONATED_FILLER",
+      "equipmentCode": "FILL-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "FILLING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "FillLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.FILLLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc chiet rot chai"
+        },
+        {
+          "name": "FillRate",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.FILLRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do chiet rot thuc te"
+        },
+        {
+          "name": "HeadCount",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L01.HEADCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So dau chiet"
+        },
+        {
+          "name": "CO2Pressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.CO2PRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat CO2"
+        },
+        {
+          "name": "CO2FlowRate",
+          "dataType": "Float",
+          "unit": "Nm3/h",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.CO2FLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong CO2"
+        },
+        {
+          "name": "ProductTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.PRODUCTTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do san pham"
+        },
+        {
+          "name": "PowerConsumption",
+          "dataType": "Float",
+          "unit": "kW",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L01.POWERCONSUMPTION",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Cong suat tieu thu"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_CAPPER_01",
+      "machineType": "SCREW_CAPPER",
+      "equipmentCode": "CAPP-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "CAPPING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CAPP.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CAPP.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CAPP.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "Torque",
+          "dataType": "Float",
+          "unit": "Nm",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L01.TORQUE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Mo-men xoan van nap"
+        },
+        {
+          "name": "CapFeedRate",
+          "dataType": "Float",
+          "unit": "caps/min",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L01.CAPFEEDRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tan suat cap nap"
+        },
+        {
+          "name": "CapMissing",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.CAPMISSING",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien thieu nap"
+        },
+        {
+          "name": "TorqueHigh",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L01.TORQUEHIGH",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mo-men van nap vuot nguong"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_LABELER_01",
+      "machineType": "BOTTLE_LABELER",
+      "equipmentCode": "LABL-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "LABELLING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "LABL.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "LABL.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "LabelRollRemaining",
+          "dataType": "Float",
+          "unit": "m",
+          "tagType": "ANALOG",
+          "tagCode": "LABL.L01.LABELROLLREMAINING",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Chieu dai cuon nhan con lai"
+        },
+        {
+          "name": "LabelApplyCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L01.LABELAPPLYCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So nhan da dan"
+        },
+        {
+          "name": "LabelMissing",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.LABELMISSING",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien thieu nhan"
+        },
+        {
+          "name": "LabelRollLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L01.LABELROLLLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi cuon nhan sap het"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_CODER_01",
+      "machineType": "DATE_CODER",
+      "equipmentCode": "CODE-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "CODING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "pcs/min",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "pcs/min",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "PrintCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L01.PRINTCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So ma da in"
+        },
+        {
+          "name": "InkLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L01.INKLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc muc in"
+        },
+        {
+          "name": "InkLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L01.INKLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi muc muc thap"
+        },
+        {
+          "name": "PrintQuality",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L01.PRINTQUALITY",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Chat luong in (enum muc 0-2)"
+        },
+        {
+          "name": "NozzleHeight",
+          "dataType": "Float",
+          "unit": "mm",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L01.NOZZLEHEIGHT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Do cao voi phun"
+        }
+      ]
+    },
+    {
+      "machineId": "L01_CASEPACKER_01",
+      "machineType": "CASE_PACKER",
+      "equipmentCode": "CASE-L01-01",
+      "channel": "LINE_01",
+      "lineId": "LINE_01",
+      "processId": "CASE_PACKING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cases/min",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L01.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cases/min",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L01.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L01.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L01.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L01.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "CaseCount",
+          "dataType": "Long",
+          "unit": "cases",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L01.CASECOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So thung da dong"
+        },
+        {
+          "name": "BottlesPerCase",
+          "dataType": "Int",
+          "unit": "pcs",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.BOTTLESPERCASE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So chai trong mot thung"
+        },
+        {
+          "name": "CaseFormat",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.CASEFORMAT",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Dinh dang thung (enum muc 0-2)"
+        },
+        {
+          "name": "PalletCount",
+          "dataType": "Long",
+          "unit": "pallets",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L01.PALLETCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So pallet da tao"
+        },
+        {
+          "name": "FilmRemaining",
+          "dataType": "Float",
+          "unit": "m",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L01.FILMREMAINING",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Chieu dai mang goi con lai"
+        },
+        {
+          "name": "FilmLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.FILMLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mang goi sap het"
+        },
+        {
+          "name": "CaseJam",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L01.CASEJAM",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien ket thung"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_PREFEED_01",
+      "machineType": "PREFORM_FEEDER",
+      "equipmentCode": "PREF-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "PREFORM_FEEDING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "preform/min",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "preform/min",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "PREF.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "PREF.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "PREF.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "PreformFeedRate",
+          "dataType": "Float",
+          "unit": "preform/min",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L02.PREFORMFEEDRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tan suat cap preform thuc te"
+        },
+        {
+          "name": "HopperLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "PREF.L02.HOPPERLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc thay the trong hopper"
+        },
+        {
+          "name": "HopperLevelLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "PREF.L02.HOPPERLEVELLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi muc hopper duoi nguong can bo sung"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_BLOWER_01",
+      "machineType": "STRETCH_BLOW_MOULDER",
+      "equipmentCode": "BLOW-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "BLOW_MOULDING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "BLOW.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "BLOW.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "BLOW.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "CycleTime",
+          "dataType": "Float",
+          "unit": "s",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.CYCLETIME",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Thoi gian mot chu ky thoi chai"
+        },
+        {
+          "name": "BlowPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.BLOWPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat thoi trong khu thoi chai"
+        },
+        {
+          "name": "HeaterTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.HEATERTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do heater thoi PET"
+        },
+        {
+          "name": "MoldTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.MOLDTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do khuon"
+        },
+        {
+          "name": "CavityCount",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "BLOW.L02.CAVITYCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So khuon ep trong khuon"
+        },
+        {
+          "name": "BottleWeight",
+          "dataType": "Float",
+          "unit": "g",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.BOTTLEWEIGHT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Khoi luong chai rong"
+        },
+        {
+          "name": "PowerConsumption",
+          "dataType": "Float",
+          "unit": "kW",
+          "tagType": "ANALOG",
+          "tagCode": "BLOW.L02.POWERCONSUMPTION",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Cong suat tieu thu tinh theo moc thoi gian"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_AIRCONV_01",
+      "machineType": "AIR_CONVEYOR",
+      "equipmentCode": "ACONV-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "BOTTLE_CONVEYING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "ACONV.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "m/min",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "m/min",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "ACONV.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "ACONV.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "ACONV.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "AirPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L02.AIRPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat duong cap khi nen"
+        },
+        {
+          "name": "AirFlowRate",
+          "dataType": "Float",
+          "unit": "Nm3/h",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L02.AIRFLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong khi nen"
+        },
+        {
+          "name": "MotorSpeed",
+          "dataType": "Float",
+          "unit": "rpm",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L02.MOTORSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do dong co hanh"
+        },
+        {
+          "name": "PowerConsumption",
+          "dataType": "Float",
+          "unit": "kW",
+          "tagType": "ANALOG",
+          "tagCode": "ACONV.L02.POWERCONSUMPTION",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Cong suat tieu thu"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_RINSER_01",
+      "machineType": "BOTTLE_RINSER",
+      "equipmentCode": "RINSE-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "RINSING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "RinseWaterPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L02.RINSEWATERPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat nuoc rua"
+        },
+        {
+          "name": "RinseWaterTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L02.RINSEWATERTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do nuoc rua"
+        },
+        {
+          "name": "RinseWaterFlowRate",
+          "dataType": "Float",
+          "unit": "m3/h",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L02.RINSEWATERFLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong nuoc rua"
+        },
+        {
+          "name": "NozzlePressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L02.NOZZLEPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat vo phun"
+        },
+        {
+          "name": "CIPPhase",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L02.CIPPHASE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Pha CIP hien tai (enum muc 0-4)"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_FILLER_01",
+      "machineType": "STILL_FILLER",
+      "equipmentCode": "FILL-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "FILLING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "FillLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.FILLLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc chiet rot chai"
+        },
+        {
+          "name": "FillRate",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.FILLRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do chiet rot thuc te"
+        },
+        {
+          "name": "HeadCount",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L02.HEADCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So dau chiet"
+        },
+        {
+          "name": "WaterTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.WATERTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do nuoc chiet"
+        },
+        {
+          "name": "WaterConductivity",
+          "dataType": "Float",
+          "unit": "uS/cm",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.WATERCONDUCTIVITY",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Do dan nuoc"
+        },
+        {
+          "name": "FillingPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.FILLINGPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat trong qua trinh chiet"
+        },
+        {
+          "name": "ProductTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L02.PRODUCTTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do san pham"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_CAPPER_01",
+      "machineType": "SCREW_CAPPER",
+      "equipmentCode": "CAPP-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "CAPPING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CAPP.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CAPP.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CAPP.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "Torque",
+          "dataType": "Float",
+          "unit": "Nm",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L02.TORQUE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Mo-men xoan van nap"
+        },
+        {
+          "name": "CapFeedRate",
+          "dataType": "Float",
+          "unit": "caps/min",
+          "tagType": "ANALOG",
+          "tagCode": "CAPP.L02.CAPFEEDRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tan suat cap nap"
+        },
+        {
+          "name": "CapMissing",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.CAPMISSING",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien thieu nap"
+        },
+        {
+          "name": "TorqueHigh",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CAPP.L02.TORQUEHIGH",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mo-men van nap vuot nguong"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_LABELER_01",
+      "machineType": "BOTTLE_LABELER",
+      "equipmentCode": "LABL-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "LABELLING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "LABL.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "bottles/min",
+          "tagType": "ANALOG",
+          "tagCode": "LABL.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "LabelRollRemaining",
+          "dataType": "Float",
+          "unit": "m",
+          "tagType": "ANALOG",
+          "tagCode": "LABL.L02.LABELROLLREMAINING",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Chieu dai cuon nhan con lai"
+        },
+        {
+          "name": "LabelApplyCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "LABL.L02.LABELAPPLYCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So nhan da dan"
+        },
+        {
+          "name": "LabelMissing",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.LABELMISSING",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien thieu nhan"
+        },
+        {
+          "name": "LabelRollLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "LABL.L02.LABELROLLLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi cuon nhan sap het"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_CODER_01",
+      "machineType": "DATE_CODER",
+      "equipmentCode": "CODE-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "CODING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "pcs/min",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "pcs/min",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "PrintCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L02.PRINTCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So ma da in"
+        },
+        {
+          "name": "InkLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L02.INKLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc muc in"
+        },
+        {
+          "name": "InkLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L02.INKLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi muc muc thap"
+        },
+        {
+          "name": "PrintQuality",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L02.PRINTQUALITY",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Chat luong in (enum muc 0-2)"
+        },
+        {
+          "name": "NozzleHeight",
+          "dataType": "Float",
+          "unit": "mm",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L02.NOZZLEHEIGHT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Do cao voi phun"
+        }
+      ]
+    },
+    {
+      "machineId": "L02_CASEPACKER_01",
+      "machineType": "CASE_PACKER",
+      "equipmentCode": "CASE-L02-01",
+      "channel": "LINE_02",
+      "lineId": "LINE_02",
+      "processId": "CASE_PACKING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cases/min",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L02.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cases/min",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L02.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L02.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L02.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L02.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "CaseCount",
+          "dataType": "Long",
+          "unit": "cases",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L02.CASECOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So thung da dong"
+        },
+        {
+          "name": "BottlesPerCase",
+          "dataType": "Int",
+          "unit": "pcs",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.BOTTLESPERCASE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So chai trong mot thung"
+        },
+        {
+          "name": "CaseFormat",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.CASEFORMAT",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Dinh dang thung (enum muc 0-2)"
+        },
+        {
+          "name": "PalletCount",
+          "dataType": "Long",
+          "unit": "pallets",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L02.PALLETCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So pallet da tao"
+        },
+        {
+          "name": "FilmRemaining",
+          "dataType": "Float",
+          "unit": "m",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L02.FILMREMAINING",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Chieu dai mang goi con lai"
+        },
+        {
+          "name": "FilmLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.FILMLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mang goi sap het"
+        },
+        {
+          "name": "CaseJam",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L02.CASEJAM",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien ket thung"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_CANDEPAL_01",
+      "machineType": "CAN_DEPALLETIZER",
+      "equipmentCode": "DEPL-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "CAN_DEPALLETTIZING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "DEPL.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "DEPL.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "DEPL.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "DEPL.L03.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "DEPL.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "CanFeedRate",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "DEPL.L03.CANFEEDRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tan suat cap lon"
+        },
+        {
+          "name": "LayerCount",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.LAYERCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So lop lon tren pallet"
+        },
+        {
+          "name": "PalletCount",
+          "dataType": "Long",
+          "unit": "pallets",
+          "tagType": "COUNTER",
+          "tagCode": "DEPL.L03.PALLETCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So pallet da xu ly"
+        },
+        {
+          "name": "GripperFault",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "DEPL.L03.GRIPPERFAULT",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi co loi co gia"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_CANRINSER_01",
+      "machineType": "CAN_RINSER",
+      "equipmentCode": "RINSE-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "RINSING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L03.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "RINSE.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "RinseWaterPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L03.RINSEWATERPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat nuoc rua"
+        },
+        {
+          "name": "RinseWaterTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L03.RINSEWATERTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do nuoc rua"
+        },
+        {
+          "name": "RinseWaterFlowRate",
+          "dataType": "Float",
+          "unit": "m3/h",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L03.RINSEWATERFLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong nuoc rua"
+        },
+        {
+          "name": "NozzlePressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "RINSE.L03.NOZZLEPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat vo phun"
+        },
+        {
+          "name": "CIPPhase",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "RINSE.L03.CIPPHASE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Pha CIP hien tai (enum muc 0-4)"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_CANFILLER_01",
+      "machineType": "CAN_FILLER",
+      "equipmentCode": "FILL-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "FILLING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L03.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "FILL.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "FillLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.FILLLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc chiet lon"
+        },
+        {
+          "name": "FillRate",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.FILLRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do chiet lon thuc te"
+        },
+        {
+          "name": "HeadCount",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "FILL.L03.HEADCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So dau chiet"
+        },
+        {
+          "name": "CO2Pressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.CO2PRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat CO2"
+        },
+        {
+          "name": "CO2FlowRate",
+          "dataType": "Float",
+          "unit": "Nm3/h",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.CO2FLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong CO2"
+        },
+        {
+          "name": "ProductTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.PRODUCTTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do san pham"
+        },
+        {
+          "name": "PowerConsumption",
+          "dataType": "Float",
+          "unit": "kW",
+          "tagType": "ANALOG",
+          "tagCode": "FILL.L03.POWERCONSUMPTION",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Cong suat tieu thu"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_SEAMER_01",
+      "machineType": "CAN_SEAMER",
+      "equipmentCode": "SEAM-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "SEAMING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "SEAM.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "SEAM.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "SEAM.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "SEAM.L03.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "SEAM.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "SeamTorque",
+          "dataType": "Float",
+          "unit": "Nm",
+          "tagType": "ANALOG",
+          "tagCode": "SEAM.L03.SEAMTORQUE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Mo-men xoan tao duong bien"
+        },
+        {
+          "name": "SeamPressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "SEAM.L03.SEAMPRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat tao duong bien"
+        },
+        {
+          "name": "SeamQuality",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "SEAM.L03.SEAMQUALITY",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Chat luong duong bien (enum muc 0-2)"
+        },
+        {
+          "name": "SeamDefectCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "SEAM.L03.SEAMDEFECTCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So duong bien khong dat"
+        },
+        {
+          "name": "CanVacuum",
+          "dataType": "Float",
+          "unit": "kPa",
+          "tagType": "ANALOG",
+          "tagCode": "SEAM.L03.CANVACUUM",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat chan khong trong lon"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_CANCODER_01",
+      "machineType": "DATE_CODER",
+      "equipmentCode": "CODE-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "CODING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "pcs/min",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "pcs/min",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "PrintCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CODE.L03.PRINTCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So ma da in"
+        },
+        {
+          "name": "InkLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L03.INKLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc muc in"
+        },
+        {
+          "name": "InkLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L03.INKLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi muc muc thap"
+        },
+        {
+          "name": "PrintQuality",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CODE.L03.PRINTQUALITY",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Chat luong in (enum muc 0-2)"
+        },
+        {
+          "name": "NozzleHeight",
+          "dataType": "Float",
+          "unit": "mm",
+          "tagType": "ANALOG",
+          "tagCode": "CODE.L03.NOZZLEHEIGHT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Do cao voi phun"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_CANINSPECT_01",
+      "machineType": "CAN_INSPECTION",
+      "equipmentCode": "INSP-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "INSPECTION",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "INSP.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cans/min",
+          "tagType": "ANALOG",
+          "tagCode": "INSP.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "INSP.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "INSP.L03.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "INSP.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "InspectionCount",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "INSP.L03.INSPECTIONCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So lon da kiem tra"
+        },
+        {
+          "name": "DefectRate",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "INSP.L03.DEFECTRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ty le loi cua hang gan nhat"
+        },
+        {
+          "name": "InspectResult",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.INSPECTRESULT",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Ket qua kiem tra (enum muc 0-2)"
+        },
+        {
+          "name": "RejectReason",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.REJECTREASON",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Ly do loai (enum muc 0-4)"
+        },
+        {
+          "name": "CameraFault",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "INSP.L03.CAMERAFAULT",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi loi camera kiem tra"
+        }
+      ]
+    },
+    {
+      "machineId": "L03_CASEPACKER_01",
+      "machineType": "CASE_PACKER",
+      "equipmentCode": "CASE-L03-01",
+      "channel": "LINE_03",
+      "lineId": "LINE_03",
+      "processId": "CASE_PACKING",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "CurrentSpeed",
+          "dataType": "Float",
+          "unit": "cases/min",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L03.CURRENTSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thuc te hien tai; ve 0 khi may dung"
+        },
+        {
+          "name": "DesignSpeed",
+          "dataType": "Float",
+          "unit": "cases/min",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L03.DESIGNSPEED",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Toc do thiet ke / dinh muc mo phong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L03.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so don vi may da xu ly, tich luy"
+        },
+        {
+          "name": "GoodCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L03.GOODCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi dat theo logic may"
+        },
+        {
+          "name": "DefectCounter",
+          "dataType": "Long",
+          "unit": "pcs",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L03.DEFECTCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So don vi loi / loai ra do may ghi nhan"
+        },
+        {
+          "name": "Starved",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.STARVED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may thieu san pham / nguyen lieu dau vao"
+        },
+        {
+          "name": "Blocked",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.BLOCKED",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi dau ra may bi chan do cong doan sau hoac buffer day"
+        },
+        {
+          "name": "CaseCount",
+          "dataType": "Long",
+          "unit": "cases",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L03.CASECOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So thung da dong"
+        },
+        {
+          "name": "CansPerCase",
+          "dataType": "Int",
+          "unit": "pcs",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.CANSPERCASE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So lon trong mot thung"
+        },
+        {
+          "name": "CaseFormat",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.CASEFORMAT",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Dinh dang thung (enum muc 0-2)"
+        },
+        {
+          "name": "PalletCount",
+          "dataType": "Long",
+          "unit": "pallets",
+          "tagType": "COUNTER",
+          "tagCode": "CASE.L03.PALLETCOUNT",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "So pallet da tao"
+        },
+        {
+          "name": "FilmRemaining",
+          "dataType": "Float",
+          "unit": "m",
+          "tagType": "ANALOG",
+          "tagCode": "CASE.L03.FILMREMAINING",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Chieu dai mang goi con lai"
+        },
+        {
+          "name": "FilmLow",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.FILMLOW",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mang goi sap het"
+        },
+        {
+          "name": "CaseJam",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CASE.L03.CASEJAM",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi phat hien ket thung"
+        }
+      ]
+    },
+    {
+      "machineId": "CIP_SKID_01",
+      "machineType": "CIP_SKID",
+      "equipmentCode": "CIP-SHARED-01",
+      "channel": "SHARED",
+      "lineId": "SHARED",
+      "processId": "CIP",
+      "tags": [
+        {
+          "name": "MachineState",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CIP.SHD.MACHINESTATE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Trang thai may (enum muc 0-5)"
+        },
+        {
+          "name": "MachineMode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CIP.SHD.MACHINEMODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE"
+        },
+        {
+          "name": "EmergencyStop",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CIP.SHD.EMERGENCYSTOP",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi mach dung khanh dang tac dong"
+        },
+        {
+          "name": "AlarmCode",
+          "dataType": "Int",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CIP.SHD.ALARMCODE",
+          "acquisitionClass": "REALTIME",
+          "meaning": "0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong"
+        },
+        {
+          "name": "TotalCounter",
+          "dataType": "Long",
+          "unit": "cycles",
+          "tagType": "COUNTER",
+          "tagCode": "CIP.SHD.TOTALCOUNTER",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Tong so chu ky CIP da chay"
+        },
+        {
+          "name": "TankTemp",
+          "dataType": "Float",
+          "unit": "degC",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.TANKTEMP",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Nhiet do be chua CIP"
+        },
+        {
+          "name": "TankLevel",
+          "dataType": "Float",
+          "unit": "%",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.TANKLEVEL",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Muc be chua CIP"
+        },
+        {
+          "name": "Conductivity",
+          "dataType": "Float",
+          "unit": "uS/cm",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.CONDUCTIVITY",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Do dan dung dich CIP"
+        },
+        {
+          "name": "pH",
+          "dataType": "Float",
+          "unit": "pH",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.PH",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Chi so pH cua dung dich"
+        },
+        {
+          "name": "FlowRate",
+          "dataType": "Float",
+          "unit": "m3/h",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.FLOWRATE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Lu luong hoi luu"
+        },
+        {
+          "name": "Pressure",
+          "dataType": "Float",
+          "unit": "bar",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.PRESSURE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Ap suat duong hoi luu"
+        },
+        {
+          "name": "ChemicalDose",
+          "dataType": "Float",
+          "unit": "L",
+          "tagType": "ANALOG",
+          "tagCode": "CIP.SHD.CHEMICALDOSE",
+          "acquisitionClass": "PERIODIC",
+          "meaning": "Luong hoa chat da bo sung"
+        },
+        {
+          "name": "HeatingOn",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CIP.SHD.HEATINGON",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi may nuoi dang bat"
+        },
+        {
+          "name": "CirculationOn",
+          "dataType": "Boolean",
+          "unit": "-",
+          "tagType": "DIGITAL",
+          "tagCode": "CIP.SHD.CIRCULATIONON",
+          "acquisitionClass": "REALTIME",
+          "meaning": "True khi bom hoi luu dang chay"
+        }
+      ]
+    }
+  ],
+  "totalTags": 404,
+  "totalMachines": 26
+}

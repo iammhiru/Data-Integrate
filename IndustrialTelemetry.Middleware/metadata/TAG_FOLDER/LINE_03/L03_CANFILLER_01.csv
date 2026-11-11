@@ -1,0 +1,19 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0280,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,FILL.L03.MACHINESTATE,REALTIME
+MachineMode,K0290,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,FILL.L03.MACHINEMODE,REALTIME
+EmergencyStop,B0300,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,FILL.L03.EMERGENCYSTOP,REALTIME
+AlarmCode,K0310,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,FILL.L03.ALARMCODE,REALTIME
+CurrentSpeed,K0320,Float,1,R/W,500,,,,,,,,,cans/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,FILL.L03.CURRENTSPEED,PERIODIC
+DesignSpeed,K0330,Float,1,R/W,500,,,,,,,,,cans/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,FILL.L03.DESIGNSPEED,PERIODIC
+TotalCounter,K0340,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,FILL.L03.TOTALCOUNTER,PERIODIC
+GoodCounter,K0350,Long,1,R/W,1000,,,,,,,,,pcs,So don vi dat theo logic may,,COUNTER,FILL.L03.GOODCOUNTER,PERIODIC
+DefectCounter,K0360,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,FILL.L03.DEFECTCOUNTER,PERIODIC
+Starved,B0370,Boolean,1,R/W,100,,,,,,,,,-,True khi may thieu san pham / nguyen lieu dau vao,,DIGITAL,FILL.L03.STARVED,REALTIME
+Blocked,B0380,Boolean,1,R/W,100,,,,,,,,,-,True khi dau ra may bi chan do cong doan sau hoac buffer day,,DIGITAL,FILL.L03.BLOCKED,REALTIME
+FillLevel,K0390,Float,1,R/W,500,,,,,,,,,%,Muc chiet lon,,ANALOG,FILL.L03.FILLLEVEL,PERIODIC
+FillRate,K0400,Float,1,R/W,500,,,,,,,,,cans/min,Toc do chiet lon thuc te,,ANALOG,FILL.L03.FILLRATE,PERIODIC
+HeadCount,K0410,Int,1,R/W,100,,,,,,,,,-,So dau chiet,,DIGITAL,FILL.L03.HEADCOUNT,PERIODIC
+CO2Pressure,K0420,Float,1,R/W,500,,,,,,,,,bar,Ap suat CO2,,ANALOG,FILL.L03.CO2PRESSURE,PERIODIC
+CO2FlowRate,K0430,Float,1,R/W,500,,,,,,,,,Nm3/h,Lu luong CO2,,ANALOG,FILL.L03.CO2FLOWRATE,PERIODIC
+ProductTemp,K0440,Float,1,R/W,500,,,,,,,,,degC,Nhiet do san pham,,ANALOG,FILL.L03.PRODUCTTEMP,PERIODIC
+PowerConsumption,K0450,Float,1,R/W,500,,,,,,,,,kW,Cong suat tieu thu,,ANALOG,FILL.L03.POWERCONSUMPTION,PERIODIC

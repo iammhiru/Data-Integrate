@@ -1,0 +1,187 @@
+{
+  "plantId": "PLANT_01",
+  "machines": {
+    "LINE_01.L01_PREFEED_01": {
+      "machineId": "L01_PREFEED_01",
+      "machineType": "PREFORM_FEEDER",
+      "equipmentCode": "PREF-L01-01",
+      "lineId": "LINE_01",
+      "processId": "PREFORM_FEEDING"
+    },
+    "LINE_01.L01_BLOWER_01": {
+      "machineId": "L01_BLOWER_01",
+      "machineType": "STRETCH_BLOW_MOULDER",
+      "equipmentCode": "BLOW-L01-01",
+      "lineId": "LINE_01",
+      "processId": "BLOW_MOULDING"
+    },
+    "LINE_01.L01_AIRCONV_01": {
+      "machineId": "L01_AIRCONV_01",
+      "machineType": "AIR_CONVEYOR",
+      "equipmentCode": "ACONV-L01-01",
+      "lineId": "LINE_01",
+      "processId": "BOTTLE_CONVEYING"
+    },
+    "LINE_01.L01_RINSER_01": {
+      "machineId": "L01_RINSER_01",
+      "machineType": "BOTTLE_RINSER",
+      "equipmentCode": "RINSE-L01-01",
+      "lineId": "LINE_01",
+      "processId": "RINSING"
+    },
+    "LINE_01.L01_FILLER_01": {
+      "machineId": "L01_FILLER_01",
+      "machineType": "CARBONATED_FILLER",
+      "equipmentCode": "FILL-L01-01",
+      "lineId": "LINE_01",
+      "processId": "FILLING"
+    },
+    "LINE_01.L01_CAPPER_01": {
+      "machineId": "L01_CAPPER_01",
+      "machineType": "SCREW_CAPPER",
+      "equipmentCode": "CAPP-L01-01",
+      "lineId": "LINE_01",
+      "processId": "CAPPING"
+    },
+    "LINE_01.L01_LABELER_01": {
+      "machineId": "L01_LABELER_01",
+      "machineType": "BOTTLE_LABELER",
+      "equipmentCode": "LABL-L01-01",
+      "lineId": "LINE_01",
+      "processId": "LABELLING"
+    },
+    "LINE_01.L01_CODER_01": {
+      "machineId": "L01_CODER_01",
+      "machineType": "DATE_CODER",
+      "equipmentCode": "CODE-L01-01",
+      "lineId": "LINE_01",
+      "processId": "CODING"
+    },
+    "LINE_01.L01_CASEPACKER_01": {
+      "machineId": "L01_CASEPACKER_01",
+      "machineType": "CASE_PACKER",
+      "equipmentCode": "CASE-L01-01",
+      "lineId": "LINE_01",
+      "processId": "CASE_PACKING"
+    },
+    "LINE_02.L02_PREFEED_01": {
+      "machineId": "L02_PREFEED_01",
+      "machineType": "PREFORM_FEEDER",
+      "equipmentCode": "PREF-L02-01",
+      "lineId": "LINE_02",
+      "processId": "PREFORM_FEEDING"
+    },
+    "LINE_02.L02_BLOWER_01": {
+      "machineId": "L02_BLOWER_01",
+      "machineType": "STRETCH_BLOW_MOULDER",
+      "equipmentCode": "BLOW-L02-01",
+      "lineId": "LINE_02",
+      "processId": "BLOW_MOULDING"
+    },
+    "LINE_02.L02_AIRCONV_01": {
+      "machineId": "L02_AIRCONV_01",
+      "machineType": "AIR_CONVEYOR",
+      "equipmentCode": "ACONV-L02-01",
+      "lineId": "LINE_02",
+      "processId": "BOTTLE_CONVEYING"
+    },
+    "LINE_02.L02_RINSER_01": {
+      "machineId": "L02_RINSER_01",
+      "machineType": "BOTTLE_RINSER",
+      "equipmentCode": "RINSE-L02-01",
+      "lineId": "LINE_02",
+      "processId": "RINSING"
+    },
+    "LINE_02.L02_FILLER_01": {
+      "machineId": "L02_FILLER_01",
+      "machineType": "STILL_FILLER",
+      "equipmentCode": "FILL-L02-01",
+      "lineId": "LINE_02",
+      "processId": "FILLING"
+    },
+    "LINE_02.L02_CAPPER_01": {
+      "machineId": "L02_CAPPER_01",
+      "machineType": "SCREW_CAPPER",
+      "equipmentCode": "CAPP-L02-01",
+      "lineId": "LINE_02",
+      "processId": "CAPPING"
+    },
+    "LINE_02.L02_LABELER_01": {
+      "machineId": "L02_LABELER_01",
+      "machineType": "BOTTLE_LABELER",
+      "equipmentCode": "LABL-L02-01",
+      "lineId": "LINE_02",
+      "processId": "LABELLING"
+    },
+    "LINE_02.L02_CODER_01": {
+      "machineId": "L02_CODER_01",
+      "machineType": "DATE_CODER",
+      "equipmentCode": "CODE-L02-01",
+      "lineId": "LINE_02",
+      "processId": "CODING"
+    },
+    "LINE_02.L02_CASEPACKER_01": {
+      "machineId": "L02_CASEPACKER_01",
+      "machineType": "CASE_PACKER",
+      "equipmentCode": "CASE-L02-01",
+      "lineId": "LINE_02",
+      "processId": "CASE_PACKING"
+    },
+    "LINE_03.L03_CANDEPAL_01": {
+      "machineId": "L03_CANDEPAL_01",
+      "machineType": "CAN_DEPALLETIZER",
+      "equipmentCode": "DEPL-L03-01",
+      "lineId": "LINE_03",
+      "processId": "CAN_DEPALLETTIZING"
+    },
+    "LINE_03.L03_CANRINSER_01": {
+      "machineId": "L03_CANRINSER_01",
+      "machineType": "CAN_RINSER",
+      "equipmentCode": "RINSE-L03-01",
+      "lineId": "LINE_03",
+      "processId": "RINSING"
+    },
+    "LINE_03.L03_CANFILLER_01": {
+      "machineId": "L03_CANFILLER_01",
+      "machineType": "CAN_FILLER",
+      "equipmentCode": "FILL-L03-01",
+      "lineId": "LINE_03",
+      "processId": "FILLING"
+    },
+    "LINE_03.L03_SEAMER_01": {
+      "machineId": "L03_SEAMER_01",
+      "machineType": "CAN_SEAMER",
+      "equipmentCode": "SEAM-L03-01",
+      "lineId": "LINE_03",
+      "processId": "SEAMING"
+    },
+    "LINE_03.L03_CANCODER_01": {
+      "machineId": "L03_CANCODER_01",
+      "machineType": "DATE_CODER",
+      "equipmentCode": "CODE-L03-01",
+      "lineId": "LINE_03",
+      "processId": "CODING"
+    },
+    "LINE_03.L03_CANINSPECT_01": {
+      "machineId": "L03_CANINSPECT_01",
+      "machineType": "CAN_INSPECTION",
+      "equipmentCode": "INSP-L03-01",
+      "lineId": "LINE_03",
+      "processId": "INSPECTION"
+    },
+    "LINE_03.L03_CASEPACKER_01": {
+      "machineId": "L03_CASEPACKER_01",
+      "machineType": "CASE_PACKER",
+      "equipmentCode": "CASE-L03-01",
+      "lineId": "LINE_03",
+      "processId": "CASE_PACKING"
+    },
+    "SHARED.CIP_SKID_01": {
+      "machineId": "CIP_SKID_01",
+      "machineType": "CIP_SKID",
+      "equipmentCode": "CIP-SHARED-01",
+      "lineId": "SHARED",
+      "processId": "CIP"
+    }
+  }
+}

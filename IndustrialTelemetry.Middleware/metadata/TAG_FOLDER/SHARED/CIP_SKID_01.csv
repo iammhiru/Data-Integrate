@@ -1,0 +1,15 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0000,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,CIP.SHD.MACHINESTATE,REALTIME
+MachineMode,K0010,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,CIP.SHD.MACHINEMODE,REALTIME
+EmergencyStop,B0020,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,CIP.SHD.EMERGENCYSTOP,REALTIME
+AlarmCode,K0030,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,CIP.SHD.ALARMCODE,REALTIME
+TotalCounter,K0040,Long,1,R/W,1000,,,,,,,,,cycles,Tong so chu ky CIP da chay,,COUNTER,CIP.SHD.TOTALCOUNTER,PERIODIC
+TankTemp,K0050,Float,1,R/W,500,,,,,,,,,degC,Nhiet do be chua CIP,,ANALOG,CIP.SHD.TANKTEMP,PERIODIC
+TankLevel,K0060,Float,1,R/W,500,,,,,,,,,%,Muc be chua CIP,,ANALOG,CIP.SHD.TANKLEVEL,PERIODIC
+Conductivity,K0070,Float,1,R/W,500,,,,,,,,,uS/cm,Do dan dung dich CIP,,ANALOG,CIP.SHD.CONDUCTIVITY,PERIODIC
+pH,K0080,Float,1,R/W,500,,,,,,,,,pH,Chi so pH cua dung dich,,ANALOG,CIP.SHD.PH,PERIODIC
+FlowRate,K0090,Float,1,R/W,500,,,,,,,,,m3/h,Lu luong hoi luu,,ANALOG,CIP.SHD.FLOWRATE,PERIODIC
+Pressure,K0100,Float,1,R/W,500,,,,,,,,,bar,Ap suat duong hoi luu,,ANALOG,CIP.SHD.PRESSURE,PERIODIC
+ChemicalDose,K0110,Float,1,R/W,500,,,,,,,,,L,Luong hoa chat da bo sung,,ANALOG,CIP.SHD.CHEMICALDOSE,PERIODIC
+HeatingOn,B0120,Boolean,1,R/W,100,,,,,,,,,-,True khi may nuoi dang bat,,DIGITAL,CIP.SHD.HEATINGON,REALTIME
+CirculationOn,B0130,Boolean,1,R/W,100,,,,,,,,,-,True khi bom hoi luu dang chay,,DIGITAL,CIP.SHD.CIRCULATIONON,REALTIME

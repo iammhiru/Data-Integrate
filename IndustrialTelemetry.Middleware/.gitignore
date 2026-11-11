@@ -1,0 +1,60 @@
+# ─── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.installed.cfg
+pip-wheel-metadata/
+
+# ─── Virtual environment ───────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Config / secrets ──────────────────────────────────────────────────────
+# .env chứa cấu hình môi trường thật (broker, OPC UA, mật khẩu) — KHÔNG commit.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ─── Logs ──────────────────────────────────────────────────────────────────
+logs/
+*.log
+run_*.log
+
+# ─── Test / build artifacts ────────────────────────────────────────────────
+_tag_tables.md
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+
+# ─── IDE / OS ──────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── Runtime artifacts ─────────────────────────────────────────────────────
+# Kafka/Spark/consumer offsets & checkpoint nếu chạy trong cùng thư mục
+checkpoints/
+offsets/
+spark-warehouse/
+
+# ─── Tài liệu sinh tự động (không commit — sinh lại bằng tools/) ──────────
+# *_tag_tables.md

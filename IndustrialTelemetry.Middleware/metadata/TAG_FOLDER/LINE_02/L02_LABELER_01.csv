@@ -1,0 +1,16 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0950,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,LABL.L02.MACHINESTATE,REALTIME
+MachineMode,K0960,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,LABL.L02.MACHINEMODE,REALTIME
+EmergencyStop,B0970,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,LABL.L02.EMERGENCYSTOP,REALTIME
+AlarmCode,K0980,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,LABL.L02.ALARMCODE,REALTIME
+CurrentSpeed,K0990,Float,1,R/W,500,,,,,,,,,bottles/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,LABL.L02.CURRENTSPEED,PERIODIC
+DesignSpeed,K1000,Float,1,R/W,500,,,,,,,,,bottles/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,LABL.L02.DESIGNSPEED,PERIODIC
+TotalCounter,K1010,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,LABL.L02.TOTALCOUNTER,PERIODIC
+GoodCounter,K1020,Long,1,R/W,1000,,,,,,,,,pcs,So don vi dat theo logic may,,COUNTER,LABL.L02.GOODCOUNTER,PERIODIC
+DefectCounter,K1030,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,LABL.L02.DEFECTCOUNTER,PERIODIC
+Starved,B1040,Boolean,1,R/W,100,,,,,,,,,-,True khi may thieu san pham / nguyen lieu dau vao,,DIGITAL,LABL.L02.STARVED,REALTIME
+Blocked,B1050,Boolean,1,R/W,100,,,,,,,,,-,True khi dau ra may bi chan do cong doan sau hoac buffer day,,DIGITAL,LABL.L02.BLOCKED,REALTIME
+LabelRollRemaining,K1060,Float,1,R/W,500,,,,,,,,,m,Chieu dai cuon nhan con lai,,ANALOG,LABL.L02.LABELROLLREMAINING,PERIODIC
+LabelApplyCount,K1070,Long,1,R/W,1000,,,,,,,,,pcs,So nhan da dan,,COUNTER,LABL.L02.LABELAPPLYCOUNT,PERIODIC
+LabelMissing,B1080,Boolean,1,R/W,100,,,,,,,,,-,True khi phat hien thieu nhan,,DIGITAL,LABL.L02.LABELMISSING,REALTIME
+LabelRollLow,B1090,Boolean,1,R/W,100,,,,,,,,,-,True khi cuon nhan sap het,,DIGITAL,LABL.L02.LABELROLLLOW,REALTIME
