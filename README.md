@@ -4,6 +4,18 @@ Kepware/OPC UA → Middleware → **Kafka** → **Spark Structured Streaming** �
 
 Thiết kế chi tiết: [`docs/architecture.txt`](docs/architecture.txt)
 
+## Dashboard
+
+Backend, Kafka Consumer, SignalR và frontend nằm trong [`dashboard/`](dashboard/README.md).
+Dashboard đọc topic **`realtime-metrics`** từ Spark và các bảng PostgreSQL.
+
+```bash
+docker compose up -d --build --wait dashboard   # http://localhost:5080
+docker compose --profile streaming up -d       # bật producer Spark theo hướng dẫn bên dưới
+```
+
+Mock độc lập: `docker compose -f dashboard/compose.mock.yaml up -d --build --wait`, mở http://localhost:5082.
+
 ## Khởi động
 
 ```bash

@@ -1,0 +1,12 @@
+name: smart-factory-dashboard-mock
+services:
+  dashboard:
+    image: smart-factory/dashboard:local
+    build:
+      context: .
+    environment:
+      Telemetry__Mode: Mock
+      ConnectionStrings__Postgres: ""
+    ports:
+      - "127.0.0.1:5082:8080"
+    init: true

@@ -3,3 +3,14 @@
 __pycache__/
 *.pyc
 .DS_Store
+**/bin/
+**/obj/
+**/node_modules/
+**/dist/
+**/wwwroot/
+**/test-results/
+**/*.tsbuildinfo
+**/appsettings.Local.json
+**/artifacts/
+*.log
+.tools/

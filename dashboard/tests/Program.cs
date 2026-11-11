@@ -1,0 +1,37 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Factory.Api;
+using Microsoft.Extensions.Configuration;
+var cfg = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Telemetry:Mode"] = "Mock" }).Build();
+var catalog = new Catalog(); var now = DateTimeOffset.UtcNow; var count = 0;
+object Payload(double? temp = 72, string status = "RUNNING") => new { temperature = temp, pressure = 5.5, speed = 1450, energy = 1.2, vibration = 2.1, status, operatingMode = "AUTO" };
+TelemetryStore Store() => new(cfg, catalog);
+void Assert(bool condition) { if (!condition) throw new Exception("Assertion failed"); }
+void Check(string name, Action action) { action(); count++; Console.WriteLine("PASS " + name); }
+Check("SQL seed catalog M001-M100 and 5 lines", () => Assert(catalog.Machines.Length == 100 && catalog.Machines[0].MachineType == "PRESS" && catalog.Machines.Last().LineId == "LINE-5"));
+Check("Repository envelope with seven fields", () => { var s = Store(); Assert(s.Apply(MockEvents.Create("M001", Payload(), now), "M001")); Assert(s.Snapshot().Tags.Length == 7); });
+Check("Duplicate ignored", () => { var s = Store(); var e = MockEvents.Create("M001", Payload(), now); Assert(s.Apply(e)); Assert(!s.Apply(e)); });
+Check("Older snapshot cannot overwrite", () => { var s = Store(); s.Apply(MockEvents.Create("M001", Payload(), now)); Assert(!s.Apply(MockEvents.Create("M001", Payload(1), now.AddSeconds(-1)))); Assert(s.Snapshot().Tags.First(t => t.TagName == "temperature").Value.GetDouble() == 72); });
+Check("Null preserved with Missing, not zero", () => { var s = Store(); Assert(s.Apply(MockEvents.Create("M001", Payload(null), now))); Assert(s.Snapshot().Tags.First(t => t.TagName == "temperature").Quality == "Missing"); });
+Check("Partial payload marks other fields missing", () => { var s = Store(); Assert(s.Apply(MockEvents.Create("M001", new { speed = 0 }, now))); Assert(s.Snapshot().Tags.Count(t => t.Quality == "Missing") == 6); });
+Check("Old nested tag contract rejected", () => Assert(!Store().Apply("{\"schemaVersion\":\"1.0\",\"machine\":{\"machineId\":\"M001\"}}")));
+Check("Wrong Kafka key rejected", () => Assert(!Store().Apply(MockEvents.Create("M001", Payload(), now), "M002")));
+Check("Invalid JSON does not crash", () => Assert(!Store().Apply("{bad")));
+Check("Unknown status rejected", () => Assert(!Store().Apply(MockEvents.Create("M001", Payload(status: "ERROR"), now))));
+Check("Wrong numeric type rejects atomically", () => { var s = Store(); Assert(!s.Apply(MockEvents.Create("M001", new { temperature = 7, speed = "wrong" }, now))); Assert(s.Snapshot().Tags.Length == 0); });
+Check("Unknown future fields tolerated", () => { var node = JsonNode.Parse(MockEvents.Create("M001", Payload(), now))!; node["extra"] = true; Assert(Store().Apply(node.ToJsonString())); });
+Check("String schemaVersion rejected", () => { var node = JsonNode.Parse(MockEvents.Create("M001", Payload(), now))!; node["schemaVersion"] = "1"; Assert(!Store().Apply(node.ToJsonString())); });
+Check("History bounded", () => { var s = Store(); for (var i = 0; i < 200; i++) s.Apply(MockEvents.Create("M001", Payload(i), now.AddSeconds(i))); Assert(s.Series("M001", "speed").Length == 180); });
+string Metric(string type, object values, DateTimeOffset? time = null) => MockEvents.Metric("M001", type, values, time ?? now);
+object Status(double speed = 1400) => new { status = "RUNNING", avgTemperature = 72, avgPressure = 5.5, avgSpeed = speed, sumEnergy = 3.6 };
+Check("Spark 5s metric maps to latest state", () => { var s = Store(); Assert(s.ApplyMetric(Metric("machine.status.5s", Status()), "M001")); Assert(s.Snapshot().Tags.First(t => t.TagCode == "speed").Value.GetDouble() == 1400); });
+Check("Production metric does not erase machine status", () => { var s = Store(); s.ApplyMetric(Metric("machine.status.5s", Status())); Assert(s.ApplyMetric(Metric("production.rate.1m", new { productionRate = 100, totalQty = 10, goodQty = 9, rejectQty = 1 }, now.AddSeconds(10)))); Assert(s.Snapshot().Tags.First(t => t.TagCode == "status").Value.GetString() == "RUNNING"); });
+Check("Production time does not block newer telemetry field", () => { var s = Store(); s.ApplyMetric(Metric("production.rate.1m", new { productionRate = 100 }, now.AddSeconds(10))); Assert(s.ApplyMetric(Metric("machine.status.5s", Status(), now.AddSeconds(1)))); });
+Check("Open-window correction with equal event time applies", () => { var s = Store(); s.ApplyMetric(Metric("machine.status.5s", Status())); var n = JsonNode.Parse(Metric("machine.status.5s", Status(1410)))!; n["emittedAt"] = now.AddSeconds(2).ToString("O"); Assert(s.ApplyMetric(n.ToJsonString())); Assert(s.Snapshot().Tags.First(t => t.TagCode == "speed").Value.GetDouble() == 1410); });
+Check("Metric duplicate ignored", () => { var s = Store(); var e = Metric("machine.status.5s", Status()); Assert(s.ApplyMetric(e)); Assert(!s.ApplyMetric(e)); });
+Check("1m aggregate does not overwrite 5s metric", () => { var s = Store(); s.ApplyMetric(Metric("machine.status.5s", Status())); Assert(s.ApplyMetric(Metric("machine.metric.1m", new { avgSpeed = 500 }, now.AddSeconds(1)))); Assert(s.Snapshot().Tags.First(t => t.TagCode == "speed").Value.GetDouble() == 1400); Assert(s.Snapshot().Tags.First(t => t.TagCode == "avgSpeed1m").Value.GetDouble() == 500); });
+Check("Invalid metric numeric payload rejected atomically", () => { var s = Store(); Assert(!s.ApplyMetric(Metric("machine.status.5s", new { status = "RUNNING", avgSpeed = "wrong" }))); Assert(s.Snapshot().Tags.Length == 0); });
+Check("Missing metric values remain null", () => { var s = Store(); Assert(s.ApplyMetric(Metric("machine.status.5s", new { status = "RUNNING" }))); Assert(s.Snapshot().Tags.First(t => t.TagCode == "speed").Value.ValueKind == JsonValueKind.Null); });
+Check("Wrong metric key rejected", () => Assert(!Store().ApplyMetric(Metric("machine.status.5s", Status()), "M002")));
+Check("Database bootstrap does not block metric correction", () => { var s = Store(); s.Apply(MockEvents.Create("M001", Payload(), now)); Assert(s.ApplyMetric(Metric("machine.status.5s", Status(1410)))); });
+Console.WriteLine($"{count} checks passed.");
