@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MES – Smart Factory Dashboard Design (v1.0)</title>
+<!--
+================ GHI CHÚ CHO AI ĐỌC CODE (spec tóm tắt) ================
+Trang = 1 board nền navy tối (#0a1224). Bố cục từ trên xuống:
+ 1. HEADER: logo vuông xanh + tiêu đề "MES – Smart Factory Dashboard Design (v1.0)" + phụ đề
+    "Professional • Clear • Actionable • Industry-Ready"; bên phải: pill "Design based on: ISA-101 | ISA-18.2 | ISA-95 | ISO 9241-210 | WCAG 2.2".
+ 2. LƯỚI 2x2 gồm 4 "khung màn hình" (.frame), mỗi khung = sidebar trái (logo MES, menu, user "Thuận Phan / Admin")
+    + vùng nội dung (breadcrumb, badge Live, Shift A, chuông, cài đặt, tiêu đề trang, nội dung):
+      [1] Dashboard > Factory Overview : 4 KPI (OEE 82.5% gauge, Output 12,450, Quality 98.5%, Active Alarms 3),
+          biểu đồ OEE Trend (line + vùng, target 85% nét đứt), Production by Line (3 thanh ngang).
+      [2] Production > Line Monitoring : bộ chọn 1h/8h/24h/7d, 3 thẻ Line 01/02/03 kèm sparkline,
+          Line Status (3 dây chuyền minh hoạ), Top Issues (3 dòng).
+      [3] Equipment > Machine Detail : Machine-02 (Running), tab Overview/Trends/History/Maintenance,
+          ảnh máy, Machine Status (Availability/Performance/Quality), Key Parameters, Recent Events, Temperature Trend.
+      [4] Alarm > Alarm List : bộ lọc, ô tìm kiếm, nút Export, bảng alarm 5 dòng, phân trang.
+ 3. HÀNG DƯỚI: 5 panel: Đánh giá tổng quan 8.5/10 | Điểm hợp lý | Điểm chưa hợp lý | Đề xuất sửa đổi | Color & Style Guide.
+Màu: Primary #2563EB, Success #16A34A, Warning #D97706, Critical #DC2626, Neutral #2563EB-ish.
+Font: Inter/system-ui. Ảnh máy móc là placeholder CSS (không có ảnh thật).
+=========================================================================
+-->
+<style>
+:root{
+  --bg:#0a1224; --panel:#0e1a34; --card:#101f3d; --line:#1d3566; --line2:#18284a;
+  --txt:#e8eefc; --mut:#8fa1c4; --pri:#2563eb; --ok:#16a34a; --warn:#d97706; --crit:#dc2626; --neu:#3b82f6;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:Inter,"Segoe UI",system-ui,sans-serif;padding:14px 18px 20px;font-size:11px;min-width:1280px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.brand{display:flex;gap:14px;align-items:center}
+.logo{width:52px;height:46px;border-radius:9px;background:var(--pri);display:grid;place-items:center}
+.brand h1{font-size:21px;font-weight:700}
+.brand p{color:var(--mut);font-size:15px;margin-top:2px}
+.pill{border:1px solid var(--line);border-radius:10px;padding:9px 18px;color:#c4d0ea;font-size:12px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.frame{display:flex;border:1px solid #214582;border-radius:14px;background:var(--panel);overflow:hidden;height:378px;box-shadow:0 0 0 1px #0b1a3a inset}
+.side{width:116px;border-right:1px solid var(--line2);padding:12px 8px;display:flex;flex-direction:column;flex-shrink:0;background:#0b162d}
+.side .lg{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;padding:4px 6px 18px}
+.side .lg i{width:20px;height:20px;border-radius:5px;background:var(--pri);display:block}
+.mi{display:flex;gap:7px;align-items:center;padding:7px 8px;border-radius:6px;color:#c6d3ee;font-size:9.5px;margin-bottom:3px}
+.mi b{width:10px;height:10px;border:1.5px solid #9db0d6;border-radius:3px;display:block}
+.mi.on{background:#16346a;color:#fff;font-weight:600}
+.mi.on b{border-color:#fff;background:#fff3}
+.user{margin-top:auto;display:flex;gap:6px;align-items:center;font-size:8px}
+.user i{width:20px;height:20px;border-radius:50%;background:#c9d4ea;display:block}
+.user small{color:var(--mut);display:block;font-size:7px}
+.main{flex:1;padding:10px 16px;min-width:0;overflow:hidden}
+.bar{display:flex;justify-content:space-between;align-items:center;color:#c0cde8;font-size:9.5px;margin-bottom:10px}
+.bar .r{display:flex;align-items:center;gap:10px;font-size:8px}
+.dot{width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:4px}
+.sel{border:1px solid var(--line);border-radius:5px;padding:3px 8px;background:#0d1b38;font-size:8.5px}
+.bell{width:12px;height:12px;border:1.5px solid #cdd8f0;border-radius:6px 6px 2px 2px}
+h2{font-size:17px;font-weight:700}
+.sub{color:var(--mut);font-size:9.5px;margin:3px 0 10px}
+.card{background:var(--card);border:1px solid var(--line2);border-radius:8px;padding:9px 11px}
+.row{display:grid;gap:10px}
+.ct{font-size:10px;font-weight:600;margin-bottom:6px;display:flex;justify-content:space-between}
+.mut{color:var(--mut)}
+.g{color:#22c55e}.o{color:#f59e0b}.rd{color:#ef4444}.b{color:#3b82f6}
+/* KPI */
+.kpi{display:flex;gap:10px;align-items:center;height:96px}
+.kpi.col{flex-direction:column;align-items:flex-start;justify-content:center;gap:2px}
+.kpi .v{font-size:21px;font-weight:600}
+.kpi .l{font-size:9px;color:#b4c2e0}
+.chip{font-size:8px;background:#12315f;border-radius:4px;padding:1px 5px;color:#4ade80}
+.ico{width:22px;height:22px;border-radius:6px;display:block}
+/* bars */
+.pb{display:grid;grid-template-columns:34px 1fr 36px;gap:8px;align-items:center;margin:11px 0;font-size:9.5px}
+.pb div.t{height:8px;border-radius:4px;background:#14264b}
+.pb div.t span{display:block;height:100%;border-radius:4px}
+/* tabs */
+.tabs{display:flex;gap:2px}
+.tabs span{padding:3px 8px;border-radius:4px;font-size:8.5px;background:#10224a;color:#b8c6e4}
+.tabs span.on{background:var(--pri);color:#fff}
+.ptab{display:flex;gap:22px;border-bottom:1px solid var(--line2);font-size:9px;color:#b8c6e4;margin:6px 0 8px;padding-left:2px}
+.ptab span{padding:4px 2px}.ptab .on{color:#fff;border-bottom:2px solid var(--pri)}
+/* issues */
+.is{display:flex;gap:8px;align-items:center;padding:6px 0;font-size:8.5px}
+.is em{margin-left:auto;font-style:normal;color:var(--mut)}
+.is small{display:block;color:var(--mut);font-size:7.5px}
+.ic{width:18px;height:18px;border-radius:50%;display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0}
+/* machine */
+.mach{height:140px;border-radius:6px;background:linear-gradient(135deg,#aab6c9 0%,#6e7f9a 45%,#2e3b55 100%);position:relative;overflow:hidden}
+.mach:before{content:"";position:absolute;left:18%;top:14%;width:52%;height:62%;background:#d3dae6;border-radius:4px;box-shadow:0 0 0 6px #4d5c78 inset}
+.mach:after{content:"";position:absolute;left:0;right:0;bottom:0;height:22%;background:#2b374d}
+.big{font-size:15px;font-weight:600}
+.param{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:9px}
+.param i{width:20px;height:20px;border-radius:50%;background:#172b57;border:1.5px solid #3b82f6}
+.param b{margin-left:auto;font-weight:500;font-size:11px}
+.ev{display:flex;gap:8px;align-items:center;font-size:8px;margin:5px 0}
+.ev i{width:6px;height:6px;border-radius:50%}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:8.5px}
+th{text-align:left;color:#cfd9f1;font-weight:600;padding:5px 4px;border-bottom:1px solid var(--line)}
+td{padding:7px 4px;border-bottom:1px solid var(--line2)}
+.tag{padding:1px 5px;border-radius:3px;font-size:7px;font-weight:700;color:#fff}
+.btn{background:var(--pri);color:#fff;border-radius:4px;padding:3px 7px;font-size:8px;font-weight:600;display:inline-block}
+.st{border:1px solid #7f1d1d;background:#3a1620;color:#fda4a4;padding:1px 4px;border-radius:3px;font-size:7.5px}
+.st.ok{border-color:#14532d;background:#0f2b1d;color:#86efac}
+.filters{display:flex;gap:8px;margin:6px 0 8px;align-items:center}
+.filters .sel{padding:5px 10px;font-size:8.5px}
+.pg{display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:8px;color:#b4c2e0}
+.pg span{display:inline-block;padding:3px 6px;margin-left:4px;border-radius:4px}
+.pg .on{background:var(--pri);color:#fff}
+/* bottom */
+.bottom{display:grid;grid-template-columns:1.05fr 1.15fr 1.15fr 1.15fr 1.1fr;gap:14px;margin-top:15px}
+.bp{border:1px solid #214582;border-radius:12px;background:var(--panel);padding:14px 16px;min-height:150px}
+.bp h3{font-size:13px;font-weight:600;margin-bottom:10px;display:flex;gap:8px;align-items:center}
+.bp li{list-style:none;display:flex;gap:8px;align-items:center;font-size:11px;margin:6px 0;color:#dbe5fa}
+.ck{width:15px;height:15px;border-radius:50%;background:#22c55e;flex-shrink:0;display:grid;place-items:center;color:#06210f;font-size:10px;font-weight:700}
+.wn{width:15px;height:15px;background:#f59e0b;clip-path:polygon(50% 0,100% 100%,0 100%);flex-shrink:0}
+.score{display:flex;align-items:center;gap:12px;margin:6px 0}
+.score .ck{width:40px;height:40px;font-size:24px}
+.score b{font-size:32px;font-weight:600}.score small{font-size:20px;color:#b4c2e0}
+.cs{display:flex;gap:8px;align-items:center;font-size:10px;margin:7px 0}
+.cs i{width:14px;height:14px;border-radius:50%;display:block}
+.cs code{color:#7f93b8;margin-left:auto;font-family:inherit;margin-right:14px}
+.bt{display:inline-block;border-radius:5px;padding:6px 14px;font-size:10px;font-weight:600;color:#fff;text-align:center}
+svg{display:block}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand">
+    <div class="logo"><svg width="28" height="24" viewBox="0 0 28 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M2 22V8l7 5V8l7 5V3h4v19z"/></svg></div>
+    <div><h1>MES – Smart Factory Dashboard Design (v1.0)</h1><p>Professional • Clear • Actionable • Industry-Ready</p></div>
+  </div>
+  <div class="pill">Design based on: ISA-101 | ISA-18.2 | ISA-95 | ISO 9241-210 | WCAG 2.2</div>
+</div>
+
+<div class="grid">
+
+<!-- ============ FRAME 1: FACTORY OVERVIEW ============ -->
+<section class="frame" data-menu="Dashboard" data-user>
+  <div class="main">
+    <div class="bar"><span>Dashboard &nbsp;›&nbsp; Factory Overview</span>
+      <div class="r"><span><i class="dot"></i>Live · 14:09:06 · 26/11/2026</span><span class="sel">Shift: A ⌄</span><i class="bell"></i><i class="bell" style="border-radius:50%"></i></div></div>
+    <h2>Factory Overview</h2>
+    <div class="sub">Real-time production performance across the factory</div>
+    <div class="row" style="grid-template-columns:1.25fr 1fr 1fr 1fr">
+      <div class="card kpi">
+        <svg width="54" height="54" viewBox="0 0 54 54"><circle cx="27" cy="27" r="22" fill="none" stroke="#14264b" stroke-width="5"/><path d="M8 38A22 22 0 1 1 44 40" fill="none" stroke="#22c55e" stroke-width="5" stroke-linecap="round"/><path d="M20 34l12-12" stroke="#22c55e" stroke-width="2.5"/></svg>
+        <div><div class="v">82.5%</div><div class="l">OEE</div><span class="chip">▲ +1.2%</span></div></div>
+      <div class="card kpi col"><i class="ico" style="background:#2563eb"></i><div class="v">12,450</div><div class="l">Output (pcs) &nbsp;<span class="chip">▲ +3.1%</span></div></div>
+      <div class="card kpi col"><i class="ico" style="background:#16a34a;border-radius:50%"></i><div class="v">98.5%</div><div class="l">Quality Rate &nbsp;<span class="chip">▲ +0.1%</span></div></div>
+      <div class="card kpi col"><i class="ico rd" style="background:#dc2626;clip-path:polygon(50% 0,100% 100%,0 100%)"></i><div class="v">3</div><div class="l">Active Alarms &nbsp;<span class="chip rd" style="background:#3a1620">▼ -1</span></div></div>
+    </div>
+    <div class="row" style="grid-template-columns:1.6fr 1fr;margin-top:10px">
+      <div class="card" style="height:152px"><div class="ct"><span>OEE Trend</span><span class="mut"><span class="b">●</span> OEE &nbsp;-- Target (85%)</span></div>
+        <svg width="100%" height="118" viewBox="0 0 340 118" preserveAspectRatio="none">
+          <g stroke="#1d3566" stroke-width=".6"><path d="M28 8H340M28 31H340M28 55H340M28 79H340M28 100H340"/></g>
+          <g fill="#9fb0d2" font-size="8"><text x="0" y="11">100%</text><text x="2" y="34">75%</text><text x="2" y="58">50%</text><text x="2" y="82">25%</text><text x="8" y="103">0%</text></g>
+          <path d="M38 34L56 33 76 37 96 42 116 33 150 33 190 30 222 28 252 25 290 30 328 32V100H38Z" fill="#2563eb" opacity=".22"/>
+          <path d="M38 34L56 33 76 37 96 42 116 33 150 33 190 30 222 28 252 25 290 30 328 32" fill="none" stroke="#3b82f6" stroke-width="1.6"/>
+          <path d="M28 26H340" stroke="#8fa1c4" stroke-dasharray="3 3" stroke-width=".8"/>
+          <path d="M206 26V100" stroke="#4a5f8f" stroke-dasharray="2 2" stroke-width=".7"/>
+          <rect x="192" y="13" width="28" height="13" rx="3" fill="#2563eb"/><text x="196" y="23" fill="#fff" font-size="8">92.5%</text>
+          <g fill="#9fb0d2" font-size="8"><text x="28" y="115">08:00</text><text x="94" y="115">10:00</text><text x="158" y="115">12:00</text><text x="205" y="115">14:00</text><text x="262" y="115">16:00</text><text x="312" y="115">18:00</text></g>
+        </svg></div>
+      <div class="card" style="height:152px"><div class="ct"><span>Production by Line</span></div>
+        <div class="pb"><span>Line 01</span><div class="t"><span style="width:90%;background:#22c55e"></span></div><b>86.2%</b></div>
+        <div class="pb"><span>Line 02</span><div class="t"><span style="width:78%;background:#f59e0b"></span></div><b>78.5%</b></div>
+        <div class="pb"><span>Line 03</span><div class="t"><span style="width:80%;background:#3b82f6"></span></div><b>80.1%</b></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FRAME 2: LINE MONITORING ============ -->
+<section class="frame" data-menu="Production" data-user>
+  <div class="main">
+    <div class="bar"><span>Production &nbsp;›&nbsp; Line Monitoring</span>
+      <div class="r"><span><i class="dot"></i>Live · 14:09:06 · 26/11/2026</span><span class="sel">Shift: A ⌄</span><i class="bell"></i><i class="bell" style="border-radius:50%"></i></div></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start"><div><h2>Line Monitoring</h2><div class="sub">Real-time status of production lines</div></div>
+      <div class="tabs"><span class="on">1h</span><span>8h</span><span>24h</span><span>7d</span></div></div>
+    <div class="row" style="grid-template-columns:repeat(3,1fr)" id="lines"></div>
+    <div class="row" style="grid-template-columns:1.9fr 1fr;margin-top:10px">
+      <div class="card" style="height:150px"><div class="ct"><span>Line Status</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;font-size:8.5px" id="ls"></div></div>
+      <div class="card" style="height:150px"><div class="ct"><span>Top Issues</span><span class="b" style="font-size:8px">View all →</span></div>
+        <div class="is"><span class="ic" style="background:#3a1620;color:#ef4444">!</span><div>Machine-02 (Line 02)<small>Overtemperature</small></div><em>14:05</em></div>
+        <div class="is"><span class="ic" style="background:#3a2a10;color:#f59e0b">!</span><div>Machine-01 (Line 03)<small>Performance drop</small></div><em>13:50</em></div>
+        <div class="is"><span class="ic" style="background:#12315f;color:#3b82f6">i</span><div>Material shortage (Line 01)<small>Check material</small></div><em>13:40</em></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FRAME 3: MACHINE DETAIL ============ -->
+<section class="frame" data-menu="Equipment" data-user>
+  <div class="main">
+    <div class="bar"><span>Equipment &nbsp;›&nbsp; Machine Detail</span><div class="r"><span><i class="dot"></i>Live · 14:09:06</span><span>⤢</span></div></div>
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:4px">
+      <span class="sel" style="padding:8px 10px;font-size:12px">←</span>
+      <div><div style="font-size:16px;font-weight:600">Machine-02 <span class="chip" style="font-size:8px;padding:2px 7px;margin-left:6px;background:#0f3a24">Running</span></div><div class="mut" style="font-size:9px">Line 02 • Assembly</div></div></div>
+    <div class="ptab"><span class="on">Overview</span><span>Trends</span><span>History</span><span>Maintenance</span><span style="margin-left:auto" class="mut">View Trends →</span></div>
+    <div class="row" style="grid-template-columns:150px 1fr 1fr;align-items:stretch">
+      <div class="mach"></div>
+      <div class="card"><div class="ct">Machine Status</div>
+        <div style="display:flex;gap:10px;align-items:center"><span class="ck" style="width:34px;height:34px;font-size:20px">✓</span><div><div class="big g">Running</div><div class="mut" style="font-size:8px">Since 13:45 (24m)</div></div></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:12px;font-size:8px;color:#b4c2e0">
+          <div>Availability<div style="font-size:15px;color:#fff;font-weight:600;margin-top:3px">92.5%</div></div>
+          <div>Performance<div style="font-size:15px;color:#fff;font-weight:600;margin-top:3px">88.1%</div></div>
+          <div>Quality<div style="font-size:15px;color:#fff;font-weight:600;margin-top:3px">99.2%</div></div></div></div>
+      <div class="card"><div class="ct">Key Parameters</div>
+        <div class="param"><i style="border-color:#ef4444"></i>Temperature<b>72.5 °C</b></div>
+        <div class="param"><i></i>Pressure<b>3.2 bar</b></div>
+        <div class="param"><i></i>Speed<b>4,200 <small class="mut">rpm</small></b></div></div>
+    </div>
+    <div class="row" style="grid-template-columns:1fr 1fr;margin-top:8px">
+      <div class="card" style="height:98px"><div class="ct">Recent Events</div>
+        <div class="ev"><i style="background:#22c55e"></i>14:05 &nbsp;Parameter updated by Operator</div>
+        <div class="ev"><i style="background:#84cc16"></i>13:50 &nbsp;Production resumed</div>
+        <div class="ev"><i style="background:#ef4444"></i>13:40 &nbsp;Downtime: Changeover (12 min)</div></div>
+      <div class="card" style="height:98px"><div class="ct"><span>Temperature Trend</span><span class="sel" style="padding:1px 6px">1h ⌄</span></div>
+        <svg width="100%" height="64" viewBox="0 0 220 64" preserveAspectRatio="none"><g stroke="#1d3566" stroke-width=".6"><path d="M18 8H220M18 30H220M18 54H220"/></g>
+          <g fill="#9fb0d2" font-size="7"><text x="0" y="10">100</text><text x="2" y="33">75</text><text x="2" y="57">50</text></g>
+          <path d="M22 44L50 28 80 34 110 38 140 28 170 32 200 30 218 28V54H22Z" fill="#2563eb" opacity=".25"/>
+          <path d="M22 44L50 28 80 34 110 38 140 28 170 32 200 30 218 28" fill="none" stroke="#3b82f6" stroke-width="1.5"/></svg></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FRAME 4: ALARM LIST ============ -->
+<section class="frame" data-menu="Alarm" data-user>
+  <div class="main">
+    <div class="bar"><span>Alarm &nbsp;›&nbsp; Alarm List</span><div class="r"><span><i class="dot"></i>Live · 14:09:06</span><i class="bell"></i></div></div>
+    <div style="display:flex;gap:10px;align-items:center"><span class="ic rd" style="background:#dc2626;color:#fff;width:22px;height:22px;border-radius:4px">!</span><div><h2 style="font-size:15px">Alarm Management</h2><div class="sub" style="margin:2px 0 0">Monitor and handle alarms in real-time</div></div></div>
+    <div class="filters"><span class="sel">All Lines ⌄</span><span class="sel">All Severity ⌄</span><span class="sel">Last 24h ⌄</span><span class="sel" style="flex:1;color:#8fa1c4">🔍 Search alarm...</span><span class="sel">Export ⌄</span></div>
+    <div class="card" style="padding:4px 8px"><table>
+      <tr><th>Time</th><th>Severity</th><th>Source</th><th>Description</th><th>Status</th><th>Action</th></tr>
+      <tr><td>14:07:12</td><td><span class="tag" style="background:#b91c1c">HIGH</span></td><td>Machine-02</td><td>Overtemperature (95.2 °C)</td><td><span class="st">Unacknowledged</span></td><td><span class="btn">Acknowledge</span></td></tr>
+      <tr><td>14:05:33</td><td><span class="tag" style="background:#b45309">WARNING</span></td><td>Line 03</td><td>Performance below target (72%)</td><td><span class="st">Unacknowledged</span></td><td><span class="btn">Acknowledge</span></td></tr>
+      <tr><td>13:50:21</td><td><span class="tag" style="background:#1d4ed8">INFO</span></td><td>Production</td><td>PO-2026-00125 completed</td><td>–</td><td>–</td></tr>
+      <tr><td>13:45:10</td><td><span class="tag" style="background:#b45309">WARNING</span></td><td>Machine-01</td><td>Vibration exceeds threshold</td><td><span class="st ok">Acknowledged</span></td><td>–</td></tr>
+      <tr><td>13:32:18</td><td><span class="tag" style="background:#1d4ed8">INFO</span></td><td>Material</td><td>Material received: LOT-7845</td><td>–</td><td>–</td></tr>
+    </table></div>
+    <div class="pg"><span style="margin:0">Showing 1–5 of 42 items</span><div><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>...</span><span>›</span><span class="sel">5 / page ⌄</span></div></div>
+  </div>
+</section>
+
+</div>
+
+<!-- ============ BOTTOM PANELS ============ -->
+<div class="bottom">
+  <div class="bp"><h3>2.3 &nbsp;Đánh giá tổng quan</h3>
+    <div class="score"><span class="ck">✓</span><b>8.5</b><small>/10</small></div>
+    <p style="font-size:11px;color:#c4d0ea;line-height:1.5">Giao diện hiện đại, đầy đủ chức năng. Cần cải thiện một số điểm để đạt chuẩn công nghiệp.</p></div>
+  <div class="bp"><h3><span class="ck" style="width:20px;height:20px">✓</span><span class="g">Điểm hợp lý</span></h3><ul>
+    <li><span class="ck">✓</span>Dashboard tổng quan rõ ràng</li><li><span class="ck">✓</span>Phân biệt trạng thái bằng màu + icon</li><li><span class="ck">✓</span>Có real-time và drill-down</li><li><span class="ck">✓</span>Bố cục nhất quán, hiện đại</li></ul></div>
+  <div class="bp"><h3><span class="wn" style="width:20px;height:20px"></span><span class="o">Điểm chưa hợp lý</span></h3><ul>
+    <li><span class="wn"></span>Thiếu ngữ cảnh vai trò (Operator/Engineer)</li><li><span class="wn"></span>Chưa thể hiện Data Freshness rõ ràng</li><li><span class="wn"></span>Alarm chưa nổi bật và có hướng dẫn xử lý</li><li><span class="wn"></span>Một số biểu đồ chưa có đơn vị đo</li></ul></div>
+  <div class="bp"><h3><span class="ck" style="width:20px;height:20px">●</span><span class="g">Đề xuất sửa đổi</span></h3><ul>
+    <li><span class="ck">✓</span>Thêm Role-based UI &amp; quyền truy cập</li><li><span class="ck">✓</span>Hiển thị trạng thái dữ liệu (timestamp, quality)</li><li><span class="ck">✓</span>Tối ưu Alarm Panel (severity, acknowledge)</li><li><span class="ck">✓</span>Tuân thủ Design System (spacing, typography)</li></ul></div>
+  <div class="bp"><h3>Color &amp; Style Guide (gợi ý)</h3>
+    <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:6px 10px;align-items:center">
+      <div>
+        <div class="cs"><i style="background:#16a34a"></i>Success<code>#16A34A</code></div>
+        <div class="cs"><i style="background:#d97706"></i>Wanning<code>#D97706</code></div>
+        <div class="cs"><i style="background:#dc2626"></i>Critical<code>#DC2626</code></div>
+        <div class="cs"><i style="background:#2563eb"></i>Neutral<code>#2674BB</code></div></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <span class="bt" style="background:#2563eb">Primary</span><span class="bt" style="background:#1e2f55">Secondary</span>
+        <span class="bt" style="background:#1d4ed8">Secondary</span><span class="bt" style="background:#3b82f6">Danger</span>
+        <span class="bt" style="background:#dc2626">Danger</span><span class="bt" style="background:#0f1f40;border:1px solid #1d3566">🔍 ▽ ◌</span></div>
+    </div></div>
+</div>
+
+<script>
+// ---- Sidebar (dùng chung cho 4 khung): active item lấy từ data-menu ----
+const items=["Dashboard","Production","Equipment","Quality","Material","Analytics","Administration"];
+document.querySelectorAll(".frame").forEach(f=>{
+  const act=f.dataset.menu;
+  let list=items.slice();
+  if(act==="Alarm"){list=["Dashboard","Production","Equipment","Alarm","Material","Analytics"]}
+  const side=document.createElement("aside");side.className="side";
+  side.innerHTML='<div class="lg"><i></i>MES</div>'+list.map(n=>`<div class="mi${n===act?" on":""}"><b></b>${n}</div>`).join("")+
+   '<div class="user"><i></i><div>Thuận Phan<small>Admin</small></div></div>';
+  f.prepend(side);
+});
+// ---- 3 thẻ Line 01/02/03 với sparkline ----
+const L=[["Line 01","86.2%","#22c55e","M0 24 8 20 16 22 26 14 36 18 46 10 56 14 66 8 76 12 86 6 96 10 106 4"],
+         ["Line 02","78.5%","#f59e0b","M0 26 10 22 20 24 30 18 40 20 50 12 60 18 70 10 80 14 90 8 106 6"],
+         ["Line 03","80.1%","#22c55e","M0 22 10 24 20 16 30 18 40 12 50 14 60 8 70 12 80 6 90 10 106 4"]];
+document.getElementById("lines").innerHTML=L.map(l=>`<div class="card" style="height:92px">
+  <div style="font-size:9px;display:flex;align-items:center;gap:5px"><i class="dot" style="background:${l[2]};margin:0"></i>${l[0]}</div>
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px">
+   <span style="font-size:22px">${l[1]}</span>
+   <svg width="90" height="30" viewBox="0 0 106 30"><path d="${l[3]}" fill="none" stroke="${l[2]}" stroke-width="1.6"/></svg></div></div>`).join("");
+// ---- Line Status: 3 máy minh hoạ bằng CSS ----
+document.getElementById("ls").innerHTML=["Line 01","Line 02","Line 03"].map((n,i)=>`<div>${n}
+  <div style="margin-top:8px;height:70px;border-radius:6px;background:linear-gradient(#17284f,#0d1a38);position:relative">
+    <div style="position:absolute;left:12%;right:12%;bottom:8px;height:12px;background:#1b7a4d;border-radius:3px"></div>
+    <div style="position:absolute;left:30%;right:30%;top:8px;height:38px;border-radius:5px;background:${["#3b82f6","#f59e0b","#3b82f6"][i]};opacity:.85;box-shadow:0 0 12px ${["#3b82f6","#f59e0b","#3b82f6"][i]}88"></div>
+  </div></div>`).join("");
+</script>
+</body>
+</html>

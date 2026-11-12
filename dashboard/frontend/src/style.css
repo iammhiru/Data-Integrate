@@ -133,6 +133,14 @@ a {
   text-align: left;
   font-weight: 500;
 }
+/* Link (không phải button) — dùng cho "về giao diện vận hành MES" (12/11). */
+.nav-link-item {
+  text-decoration: none;
+  margin-top: 8px;
+  border-top: 1px solid #e3eae6;
+  border-radius: 0;
+  padding-top: 14px;
+}
 .nav-item.active {
   background: #eaf3ee;
   color: #236449;

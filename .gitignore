@@ -46,6 +46,10 @@ run_*.log
 htmlcov/
 _tag_tables.md
 
+# ─── Ảnh chụp tạm (script tự sinh) ─────────────────────────────────────────
+dashboard/frontend/tools/_*.png
+dashboard/frontend/shots/
+
 # ─── IDE / OS ──────────────────────────────────────────────────────────────
 .vscode/
 *.swp

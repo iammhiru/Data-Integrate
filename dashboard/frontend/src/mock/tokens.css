@@ -1,0 +1,287 @@
+/* ==========================================================================
+   Design tokens — THEME SÁNG (mặc định) + theme tối (opt-in)
+   Nguồn: docs/MES_UI_Concept_v1.0.md §C.8
+
+   ⚠ 2026-11-12: đổi theme mặc định sang SÁNG (phòng điều khiển sáng, đọc tốt
+      dưới ánh đèn nhà máy). Theme tối vẫn giữ ở `[data-theme="dark"]` để so
+      sánh — bấm nút mặt trăng/sun ở topbar để đổi.
+   ⚠ Mọi màu trong app.css PHẢI đi qua token. Không hard-code hex.
+   ========================================================================== */
+
+:root {
+  /* ── Surfaces ───────────────────────────────────────────────────────── */
+  --bg-base: #eef2f7;
+  --bg-sunken: #e4eaf2;
+  --bg-surface: #ffffff;
+  --bg-surface-2: #ffffffcc;
+  --bg-raised: #f7f9fc;
+  --bg-hover: #eef3f9;
+
+  /* ── Borders ───────────────────────────────────────────────────────── */
+  --border-subtle: #e3e9f0;
+  --border-default: #cbd5e1;
+  --border-strong: #94a3b8;
+
+  /* ── Text ──────────────────────────────────────────────────────────── */
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+
+  /* ── Accent ────────────────────────────────────────────────────────── */
+  --accent: #2563eb;
+  --accent-hover: #1d4ed8;
+  --accent-soft: #2563eb14;
+  --accent-contrast: #ffffff;
+
+  /* ── Machine state (đã chốt: đỏ = LỖI, xám = Dừng) ───────────────── */
+  /* `-fg` là màu CHỮ trên nền sáng → phải đủ đậm để đạt WCAG AA. */
+  --state-running: #16a34a;
+  --state-running-bg: #16a34a14;
+  --state-running-fg: #15803d;
+
+  --state-stopped: #64748b;
+  --state-stopped-bg: #64748b14;
+  --state-stopped-fg: #475569;
+
+  --state-fault: #dc2626;
+  --state-fault-bg: #dc262614;
+  --state-fault-fg: #b91c1c;
+
+  --state-starved: #d97706;
+  --state-starved-bg: #d9770614;
+  --state-starved-fg: #b45309;
+
+  --state-blocked: #ea580c;
+  --state-blocked-bg: #ea580c14;
+  --state-blocked-fg: #c2410c;
+
+  --state-maintenance: #64748b;
+  --state-maintenance-bg: #64748b1f;
+  --state-maintenance-fg: #475569;
+
+  --state-starting: #0284c7;
+  --state-starting-bg: #0284c714;
+  --state-starting-fg: #0369a1;
+
+  --state-off: #94a3b8;
+  --state-off-bg: #94a3b81f;
+  --state-off-fg: #64748b;
+
+  --state-warning: #ca8a04;
+  --state-warning-bg: #ca8a0414;
+  --state-warning-fg: #a16207;
+
+  --state-nodata: #94a3b8;
+  --state-nodata-bg: #94a3b81a;
+  --state-nodata-fg: #64748b;
+
+  /* ── Semantic ──────────────────────────────────────────────────────── */
+  --ok: #16a34a;
+  --warn: #d97706;
+  --crit: #dc2626;
+  --info: #2563eb;
+
+  /* ── Màu phụ trợ (thay cho hex hard-code trong app.css) ───────────── */
+  --brand-grad-from: #3b82f6;
+  --brand-grad-to: #1d4ed8;
+  --grad-progress-from: #2563eb;
+  --grad-progress-to: #60a5fa;
+  --grad-oee-from: #2563eb;
+  --grad-oee-to: #16a34a;
+  --mock-badge-fg: #b45309;
+  --mock-badge-bg: #f59e0b1f;
+  --mock-badge-border: #f59e0b66;
+  --overlay-scrim: #0f172a66;
+  --kpi-accent-border: #2563eb55;
+  --kpi-accent-grad: #2563eb12;
+
+  /* ── Typography ────────────────────────────────────────────────────── */
+  --font-sans: "Be Vietnam Pro", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Mono", ui-monospace, monospace;
+
+  --fs-page-title: 24px;
+  --fs-section: 17px;
+  --fs-card-title: 14px;
+  --fs-body: 13px;
+  --fs-table: 12.5px;
+  --fs-support: 11px;
+  --fs-kpi: 30px;
+  --fs-kpi-lg: 38px;
+
+  /* ── Spacing (4px base) ────────────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+
+  /* ── Radius / elevation ────────────────────────────────────────────── */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-full: 999px;
+
+  --shadow-1: 0 1px 2px #0f172a0f;
+  --shadow-2: 0 4px 16px #0f172a14;
+  --shadow-3: 0 16px 48px #0f172a26;
+
+  /* ── Layout ────────────────────────────────────────────────────────── */
+  --sidebar-w: 216px;
+  --topbar-h: 56px;
+}
+
+/* ══ Theme TỐI (giữ lại để so sánh) ═════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg-base: #0b1220;
+  --bg-sunken: #080d18;
+  --bg-surface: #111a2c;
+  --bg-surface-2: #16203322;
+  --bg-raised: #1a2436;
+  --bg-hover: #1e2a3e;
+
+  --border-subtle: #1e293b;
+  --border-default: #27354a;
+  --border-strong: #35455e;
+
+  --text-primary: #e8eef7;
+  --text-secondary: #9fb0c7;
+  --text-muted: #64748b;
+  --text-inverse: #0b1220;
+
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-soft: #1d4ed833;
+  --accent-contrast: #ffffff;
+
+  --state-running: #22c55e;
+  --state-running-bg: #22c55e1f;
+  --state-running-fg: #86efac;
+
+  --state-stopped: #94a3b8;
+  --state-stopped-bg: #94a3b81f;
+  --state-stopped-fg: #cbd5e1;
+
+  --state-fault: #ef4444;
+  --state-fault-bg: #ef44441f;
+  --state-fault-fg: #fca5a5;
+
+  --state-starved: #f59e0b;
+  --state-starved-bg: #f59e0b1f;
+  --state-starved-fg: #fcd34d;
+
+  --state-blocked: #f97316;
+  --state-blocked-bg: #f973161f;
+  --state-blocked-fg: #fdba74;
+
+  --state-maintenance: #64748b;
+  --state-maintenance-bg: #64748b26;
+  --state-maintenance-fg: #94a3b8;
+
+  --state-starting: #38bdf8;
+  --state-starting-bg: #38bdf81f;
+  --state-starting-fg: #7dd3fc;
+
+  --state-off: #475569;
+  --state-off-bg: #47556926;
+  --state-off-fg: #94a3b8;
+
+  --state-warning: #eab308;
+  --state-warning-bg: #eab3081f;
+  --state-warning-fg: #fde047;
+
+  --state-nodata: #64748b;
+  --state-nodata-bg: #64748b1a;
+  --state-nodata-fg: #94a3b8;
+
+  --ok: #22c55e;
+  --warn: #f59e0b;
+  --crit: #ef4444;
+  --info: #3b82f6;
+
+  --brand-grad-from: #2563eb;
+  --brand-grad-to: #1d4ed8;
+  --grad-progress-from: #2563eb;
+  --grad-progress-to: #60a5fa;
+  --grad-oee-from: #2563eb;
+  --grad-oee-to: #22c55e;
+  --mock-badge-fg: #fbbf24;
+  --mock-badge-bg: #fbbf241a;
+  --mock-badge-border: #fbbf2455;
+  --overlay-scrim: #02061799;
+  --kpi-accent-border: #2563eb55;
+  --kpi-accent-grad: #1d4ed814;
+
+  --shadow-1: 0 1px 2px #0006;
+  --shadow-2: 0 4px 16px #0008;
+  --shadow-3: 0 16px 48px #000a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+#mock-root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  -webkit-font-smoothing: antialiased;
+  font-variant-numeric: tabular-nums;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--r-full);
+  border: 2px solid var(--bg-base);
+}
+
+/* Số dùng tabular numerals để không nhảy layout khi giá trị đổi */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

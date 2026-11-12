@@ -237,11 +237,12 @@ export default function App() {
       <aside className="sidebar">
         <a
           className="brand"
-          href="#"
+          href="/"
           onClick={(e) => {
             e.preventDefault();
-            setPage("overview");
+            window.location.href = "/";
           }}
+          title="Về giao diện vận hành MES"
         >
           <span className="brand-icon">
             <Activity size={23} />
@@ -277,6 +278,14 @@ export default function App() {
               )}
             </button>
           ))}
+          {/*
+            ⚠ 12/11: giao diện vận hành chính đã chuyển sang UI MES 4 màn.
+            Trang này giữ vai trò CHẨN ĐOÁN PIPELINE → thêm link quay lại.
+          */}
+          <a className="nav-item nav-link-item" href="/">
+            <LayoutDashboard size={19} />
+            Giao diện vận hành MES
+          </a>
         </nav>
         <div className="side-bottom">
           <div className="pipeline-label">
