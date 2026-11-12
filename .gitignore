@@ -46,6 +46,10 @@ run_*.log
 htmlcov/
 _tag_tables.md
 
+# ─── Prompt giao việc nội bộ (không đưa lên repo) ─────────────────────────
+prompt.md
+work.md
+
 # ─── Ảnh chụp tạm (script tự sinh) ─────────────────────────────────────────
 dashboard/frontend/tools/_*.png
 dashboard/frontend/shots/
