@@ -12,9 +12,22 @@ Endpoints:
     GET /api/machines/{machineId}            toan bo tag moi nhat cua 1 may
     GET /api/machines/{machineId}/tags/{tagName}
     GET /api/lines                           tong hop so may theo line / trang thai
+    GET /ui                                  trang test realtime (HTML nhan WebSocket)
+    WS  /ws/machines?machineId=&lineId=      day realtime: snapshot luc ket noi, sau do patch thay doi
+
+WebSocket (server -> client):
+    {"type":"snapshot","ready":bool,"serverTime":..,"machines":[<giong GET /api/machines/{id}>]}
+    {"type":"patch","serverTime":..,"machines":[<summary may> + "tags": {chi cac tag vua doi}]}
+    {"type":"heartbeat","serverTime":..,"ready":bool}      khi khong co gi gui trong WS_HEARTBEAT_SEC
+client -> server (tuy chon):
+    {"action":"subscribe","machineIds":["L01_FILLER_01"],"lineId":null}  doi bo loc -> nhan snapshot moi
+    {"action":"ping"}  -> {"type":"pong"}
+Thay doi duoc gom va gui moi WS_FLUSH_MS (mac dinh 250ms); nhieu lan doi cung 1 tag trong 1 nhip
+chi gui ban moi nhat. Chi co 1 coroutine (broadcaster) gui snapshot/patch -> thu tu luon dung.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
@@ -23,13 +36,17 @@ import time
 from datetime import datetime, timezone
 
 from confluent_kafka import Consumer, KafkaError, TopicPartition, OFFSET_BEGINNING
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi.responses import FileResponse, RedirectResponse
 
 BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "kafka:9092")
 TOPIC = os.getenv("STATE_TOPIC", "machine-state")
 STALE_AFTER_SEC = float(os.getenv("STALE_AFTER_SEC", "60"))
 SUMMARY_TAGS = ["MachineState", "MachineMode", "AlarmCode", "EmergencyStop", "CurrentSpeed",
                 "DesignSpeed", "TotalCounter", "GoodCounter", "DefectCounter", "Starved", "Blocked"]
+WS_FLUSH_SEC = float(os.getenv("WS_FLUSH_MS", "250")) / 1000
+WS_HEARTBEAT_SEC = float(os.getenv("WS_HEARTBEAT_SEC", "15"))
+WS_SEND_TIMEOUT_SEC = float(os.getenv("WS_SEND_TIMEOUT_SEC", "5"))
 
 log = logging.getLogger("state-api")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -56,10 +73,11 @@ class StateStore:
         self.last_message_at: float | None = None
         self.offsets: dict[int, int] = {}
 
-    def apply(self, rec: dict) -> None:
+    def apply(self, rec: dict) -> tuple[str, str, dict] | None:
+        """Tra ve (machineId, tagName, entry) neu trang thai thay doi, None neu bo qua."""
         mid, tag = rec.get("machineId"), rec.get("tagName")
         if not mid or not tag:
-            return
+            return None
         value = next((rec.get(k) for k in ("valueNum", "valueBool", "valueText") if rec.get(k) is not None), None)
         if value is not None and rec.get("valueType") in ("Int32", "Int64", "UInt16", "UInt32"):
             value = int(value)
@@ -78,11 +96,12 @@ class StateStore:
             # phong thu: bo ban cu hon (vd doc lai phan chua compact cua topic)
             if old and (old["eventTime"] or "") > (entry["eventTime"] or ""):
                 self.ignored_older += 1
-                return
+                return None
             m["tags"][tag] = entry
             m["meta"] = {k: rec.get(k) for k in
                          ("machineId", "plantId", "lineId", "processId", "machineType", "equipmentCode",
                           "sourceSystem")}
+        return mid, tag, dict(entry)
 
     def machine_ids(self) -> list[str]:
         with self._lock:
@@ -99,6 +118,50 @@ class StateStore:
 
 
 store = StateStore()
+
+
+class WsClient:
+    def __init__(self, ws: WebSocket, machine_ids: set[str] | None, line_id: str | None) -> None:
+        self.ws = ws
+        self.machine_ids = machine_ids
+        self.line_id = line_id
+        self.need_snapshot = True      # broadcaster se gui snapshot o nhip ke tiep
+        self.last_sent = 0.0
+        self.lock = asyncio.Lock()
+
+    def wants(self, mid: str, line_id: str | None) -> bool:
+        return (not self.machine_ids or mid in self.machine_ids) and (not self.line_id or line_id == self.line_id)
+
+    async def send(self, msg: dict) -> bool:
+        try:
+            async with self.lock:
+                await asyncio.wait_for(self.ws.send_text(json.dumps(msg, default=str)), WS_SEND_TIMEOUT_SEC)
+            self.last_sent = time.time()
+            return True
+        except Exception:  # noqa: BLE001 - client cham / da dong -> loai bo
+            return False
+
+
+class Hub:
+    """Gom thay doi tu thread Kafka; broadcaster (asyncio) lay ra moi WS_FLUSH_SEC."""
+
+    def __init__(self) -> None:
+        self._lock = threading.Lock()
+        self._pending: dict[tuple[str, str], dict] = {}
+        self.clients: set[WsClient] = set()
+        self.patches_sent = 0
+
+    def publish(self, mid: str, tag: str, entry: dict) -> None:   # goi tu thread consumer
+        with self._lock:
+            self._pending[(mid, tag)] = entry                        # trung key -> giu ban moi nhat
+
+    def drain(self) -> dict[tuple[str, str], dict]:
+        with self._lock:
+            p, self._pending = self._pending, {}
+        return p
+
+
+hub = Hub()
 
 
 def summarize(m: dict) -> dict:
@@ -146,7 +209,9 @@ def consume_forever() -> None:
                     continue
                 if msg.value():
                     try:
-                        store.apply(json.loads(msg.value()))
+                        changed = store.apply(json.loads(msg.value()))
+                        if changed and store.ready:   # luc dang nap snapshot khong can gom patch
+                            hub.publish(*changed)
                     except (ValueError, TypeError) as exc:
                         log.warning("bo message hong offset=%s: %s", msg.offset(), exc)
                 store.messages += 1
@@ -167,9 +232,123 @@ def consume_forever() -> None:
 app = FastAPI(title="Machine State API", version="1.0")
 
 
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+def _snapshot(c: WsClient) -> dict:
+    machines = []
+    for mid in store.machine_ids():
+        m = store.get(mid)
+        if m and c.wants(mid, m["meta"].get("lineId")):
+            machines.append({**summarize(m), "tags": dict(sorted(m["tags"].items()))})
+    return {"type": "snapshot", "ready": store.ready, "serverTime": _now_iso(), "machines": machines}
+
+
+async def broadcaster() -> None:
+    """Coroutine DUY NHAT gui snapshot/patch -> client khong bao gio nhan patch cu sau snapshot moi.
+    Moi nhip: drain pending truoc, roi moi dung snapshot -> snapshot da bao gom moi thay doi da drain,
+    thay doi sau do nam trong pending cua nhip sau -> khong mat, khong lui."""
+    was_ready = store.ready
+    while True:
+        await asyncio.sleep(WS_FLUSH_SEC)
+        try:
+            if store.ready and not was_ready:          # vua nap xong -> gui lai snapshot day du
+                was_ready = True
+                for c in hub.clients:
+                    c.need_snapshot = True
+            pending = hub.drain()
+            by_m: dict[str, dict] = {}
+            for (mid, tag), e in pending.items():
+                by_m.setdefault(mid, {})[tag] = e
+            summaries = {}
+            for mid in by_m:
+                m = store.get(mid)
+                if m:
+                    summaries[mid] = summarize(m)
+            now = time.time()
+            jobs = []
+            for c in list(hub.clients):
+                if c.need_snapshot:
+                    c.need_snapshot = False
+                    jobs.append((c, _snapshot(c)))
+                    continue
+                ms = [{**summaries[mid], "tags": dict(sorted(tags.items()))}
+                      for mid, tags in by_m.items() if mid in summaries and c.wants(mid, summaries[mid].get("lineId"))]
+                if ms:
+                    jobs.append((c, {"type": "patch", "serverTime": _now_iso(), "machines": ms}))
+                    hub.patches_sent += 1
+                elif now - c.last_sent >= WS_HEARTBEAT_SEC:
+                    jobs.append((c, {"type": "heartbeat", "serverTime": _now_iso(), "ready": store.ready}))
+            if jobs:
+                results = await asyncio.gather(*(c.send(msg) for c, msg in jobs))
+                for (c, _), ok in zip(jobs, results):
+                    if not ok:
+                        hub.clients.discard(c)
+                        log.info("ws client bi loai (cham/da dong), con %d", len(hub.clients))
+                        try:
+                            await c.ws.close()
+                        except Exception:  # noqa: BLE001
+                            pass
+        except Exception as exc:  # noqa: BLE001 - khong de broadcaster chet
+            log.exception("broadcaster loi: %s", exc)
+
+
+def _parse_ids(v) -> set[str] | None:
+    if v is None:
+        return None
+    items = v.split(",") if isinstance(v, str) else v
+    ids = {str(x).strip() for x in items if str(x).strip()}
+    return ids or None
+
+
 @app.on_event("startup")
-def _start() -> None:
+async def _start() -> None:
     threading.Thread(target=consume_forever, name="kafka-consumer", daemon=True).start()
+    asyncio.create_task(broadcaster())
+
+
+@app.websocket("/ws/machines")
+async def ws_machines(ws: WebSocket, machineId: str | None = None, lineId: str | None = None):
+    await ws.accept()
+    c = WsClient(ws, _parse_ids(machineId), lineId or None)
+    hub.clients.add(c)
+    log.info("ws client ket noi (machineId=%s lineId=%s), tong %d", machineId, lineId, len(hub.clients))
+    try:
+        while True:
+            try:
+                req = json.loads(await ws.receive_text())
+            except ValueError:
+                await c.send({"type": "error", "message": "message phai la JSON"})
+                continue
+            action = req.get("action") if isinstance(req, dict) else None
+            if action == "subscribe":
+                c.machine_ids = _parse_ids(req.get("machineIds"))
+                c.line_id = req.get("lineId") or None
+                c.need_snapshot = True
+            elif action == "ping":
+                await c.send({"type": "pong", "serverTime": _now_iso()})
+            else:
+                await c.send({"type": "error", "message": "action hop le: subscribe | ping"})
+    except WebSocketDisconnect:
+        pass
+    finally:
+        hub.clients.discard(c)
+        log.info("ws client ngat, con %d", len(hub.clients))
+
+
+STATIC_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+
+
+@app.get("/", include_in_schema=False)
+def root():
+    return RedirectResponse("/ui")
+
+
+@app.get("/ui", include_in_schema=False)
+def ui():
+    """Trang test don gian: nhan WebSocket /ws/machines va hien thi realtime."""
+    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
 
 
 @app.get("/health")
@@ -177,6 +356,7 @@ def health():
     return {"status": "ok" if store.ready else "loading", "topic": TOPIC, "ready": store.ready,
             "machines": len(store.machine_ids()), "tags": store.tag_count(),
             "messagesConsumed": store.messages, "ignoredOlder": store.ignored_older,
+            "wsClients": len(hub.clients), "wsPatchesSent": hub.patches_sent,
             "lastMessageAgoSec": round(time.time() - store.last_message_at, 1) if store.last_message_at else None,
             "offsets": store.offsets}
 

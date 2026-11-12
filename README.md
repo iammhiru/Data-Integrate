@@ -84,6 +84,30 @@ Response `GET /api/machines/L01_FILLER_01` (rút gọn):
 - `ageSeconds`: số giây kể từ event mới nhất của máy; `stale = true` khi > 60s (đổi bằng env `STALE_AFTER_SEC`).
 - `value = null` kèm `statusCode = "Bad"` nghĩa là không đọc được giá trị (không phải 0).
 
+## Realtime qua WebSocket
+
+Trang xem nhanh: **http://localhost:8000/ui** (HTML thuần, nhận WebSocket, thẻ máy nháy khi có cập nhật, bấm vào máy để xem toàn bộ tag).
+
+`ws://localhost:8000/ws/machines` (Postman: **New → WebSocket**). Lọc tuỳ chọn: `?machineId=L01_FILLER_01` (nhiều máy cách nhau dấu phẩy) hoặc `?lineId=LINE_03`.
+
+Server gửi:
+
+| `type` | Khi nào | Nội dung |
+|---|---|---|
+| `snapshot` | ngay khi kết nối / đổi bộ lọc | `machines`: toàn bộ máy theo bộ lọc, mỗi máy giống `GET /api/machines/{id}` |
+| `patch` | có tag thay đổi (gom mỗi 250 ms) | `machines`: summary của máy + `tags` **chỉ gồm tag vừa đổi** |
+| `heartbeat` | 15 s không có gì để gửi | `serverTime`, `ready` |
+
+Client có thể gửi (tuỳ chọn):
+
+```json
+{"action": "subscribe", "machineIds": ["L01_FILLER_01"], "lineId": null}
+{"action": "ping"}
+```
+
+Frontend: gán state = `snapshot`, mỗi `patch` thì ghi đè summary của máy và merge `tags` theo `tagName`.
+Mất kết nối thì kết nối lại, server tự gửi snapshot mới.
+
 Mã máy (`machineId`):
 
 | Line | Máy |
@@ -101,6 +125,13 @@ So sánh API với phép tính độc lập từ topic nguồn (dừng middlewar
 docker compose stop middleware-sim && sleep 10
 docker compose exec -T state-api python - < scripts/verify_machine_state.py     # in PASS / FAIL
 docker compose start middleware-sim
+```
+
+Test WebSocket (nghe 30s, in độ trễ; nếu dừng middleware trong lúc chạy thì so trạng thái ghép từ patch với REST):
+
+```bash
+docker compose exec -T state-api python - --duration 30 < scripts/ws_client.py
+docker compose exec -T state-api python - --machine L01_FILLER_01 --duration 20 --verbose < scripts/ws_client.py
 ```
 
 ## Vận hành
