@@ -1,0 +1,14 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0000,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,ACONV.L01.MACHINESTATE,REALTIME
+MachineMode,K0010,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,ACONV.L01.MACHINEMODE,REALTIME
+EmergencyStop,B0020,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,ACONV.L01.EMERGENCYSTOP,REALTIME
+AlarmCode,K0030,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,ACONV.L01.ALARMCODE,REALTIME
+CurrentSpeed,K0040,Float,1,R/W,500,,,,,,,,,m/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,ACONV.L01.CURRENTSPEED,PERIODIC
+DesignSpeed,K0050,Float,1,R/W,500,,,,,,,,,m/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,ACONV.L01.DESIGNSPEED,PERIODIC
+TotalCounter,K0060,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,ACONV.L01.TOTALCOUNTER,PERIODIC
+GoodCounter,K0070,Long,1,R/W,1000,,,,,,,,,pcs,So don vi dat theo logic may,,COUNTER,ACONV.L01.GOODCOUNTER,PERIODIC
+DefectCounter,K0080,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,ACONV.L01.DEFECTCOUNTER,PERIODIC
+AirPressure,K0090,Float,1,R/W,500,,,,,,,,,bar,Ap suat duong cap khi nen,,ANALOG,ACONV.L01.AIRPRESSURE,PERIODIC
+AirFlowRate,K0100,Float,1,R/W,500,,,,,,,,,Nm3/h,Lu luong khi nen,,ANALOG,ACONV.L01.AIRFLOWRATE,PERIODIC
+MotorSpeed,K0110,Float,1,R/W,500,,,,,,,,,rpm,Toc do dong co hanh,,ANALOG,ACONV.L01.MOTORSPEED,PERIODIC
+PowerConsumption,K0120,Float,1,R/W,500,,,,,,,,,kW,Cong suat tieu thu,,ANALOG,ACONV.L01.POWERCONSUMPTION,PERIODIC

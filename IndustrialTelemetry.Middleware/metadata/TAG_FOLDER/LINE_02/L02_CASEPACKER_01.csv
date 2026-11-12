@@ -1,0 +1,19 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0460,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,CASE.L02.MACHINESTATE,REALTIME
+MachineMode,K0470,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,CASE.L02.MACHINEMODE,REALTIME
+EmergencyStop,B0480,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,CASE.L02.EMERGENCYSTOP,REALTIME
+AlarmCode,K0490,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,CASE.L02.ALARMCODE,REALTIME
+CurrentSpeed,K0500,Float,1,R/W,500,,,,,,,,,cases/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,CASE.L02.CURRENTSPEED,PERIODIC
+DesignSpeed,K0510,Float,1,R/W,500,,,,,,,,,cases/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,CASE.L02.DESIGNSPEED,PERIODIC
+TotalCounter,K0520,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,CASE.L02.TOTALCOUNTER,PERIODIC
+GoodCounter,K0530,Long,1,R/W,1000,,,,,,,,,pcs,So don vi dat theo logic may,,COUNTER,CASE.L02.GOODCOUNTER,PERIODIC
+DefectCounter,K0540,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,CASE.L02.DEFECTCOUNTER,PERIODIC
+Starved,B0550,Boolean,1,R/W,100,,,,,,,,,-,True khi may thieu san pham / nguyen lieu dau vao,,DIGITAL,CASE.L02.STARVED,REALTIME
+Blocked,B0560,Boolean,1,R/W,100,,,,,,,,,-,True khi dau ra may bi chan do cong doan sau hoac buffer day,,DIGITAL,CASE.L02.BLOCKED,REALTIME
+CaseCount,K0570,Long,1,R/W,1000,,,,,,,,,cases,So thung da dong,,COUNTER,CASE.L02.CASECOUNT,PERIODIC
+BottlesPerCase,K0580,Int,1,R/W,100,,,,,,,,,pcs,So chai trong mot thung,,DIGITAL,CASE.L02.BOTTLESPERCASE,PERIODIC
+CaseFormat,K0590,Int,1,R/W,100,,,,,,,,,-,Dinh dang thung (enum muc 0-2),,DIGITAL,CASE.L02.CASEFORMAT,REALTIME
+PalletCount,K0600,Long,1,R/W,1000,,,,,,,,,pallets,So pallet da tao,,COUNTER,CASE.L02.PALLETCOUNT,PERIODIC
+FilmRemaining,K0610,Float,1,R/W,500,,,,,,,,,m,Chieu dai mang goi con lai,,ANALOG,CASE.L02.FILMREMAINING,PERIODIC
+FilmLow,B0620,Boolean,1,R/W,100,,,,,,,,,-,True khi mang goi sap het,,DIGITAL,CASE.L02.FILMLOW,REALTIME
+CaseJam,B0630,Boolean,1,R/W,100,,,,,,,,,-,True khi phat hien ket thung,,DIGITAL,CASE.L02.CASEJAM,REALTIME

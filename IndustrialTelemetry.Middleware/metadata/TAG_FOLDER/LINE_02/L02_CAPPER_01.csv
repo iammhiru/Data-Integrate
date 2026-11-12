@@ -1,0 +1,16 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K0310,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,CAPP.L02.MACHINESTATE,REALTIME
+MachineMode,K0320,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,CAPP.L02.MACHINEMODE,REALTIME
+EmergencyStop,B0330,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,CAPP.L02.EMERGENCYSTOP,REALTIME
+AlarmCode,K0340,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,CAPP.L02.ALARMCODE,REALTIME
+CurrentSpeed,K0350,Float,1,R/W,500,,,,,,,,,bottles/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,CAPP.L02.CURRENTSPEED,PERIODIC
+DesignSpeed,K0360,Float,1,R/W,500,,,,,,,,,bottles/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,CAPP.L02.DESIGNSPEED,PERIODIC
+TotalCounter,K0370,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,CAPP.L02.TOTALCOUNTER,PERIODIC
+GoodCounter,K0380,Long,1,R/W,1000,,,,,,,,,pcs,So don vi dat theo logic may,,COUNTER,CAPP.L02.GOODCOUNTER,PERIODIC
+DefectCounter,K0390,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,CAPP.L02.DEFECTCOUNTER,PERIODIC
+Starved,B0400,Boolean,1,R/W,100,,,,,,,,,-,True khi may thieu san pham / nguyen lieu dau vao,,DIGITAL,CAPP.L02.STARVED,REALTIME
+Blocked,B0410,Boolean,1,R/W,100,,,,,,,,,-,True khi dau ra may bi chan do cong doan sau hoac buffer day,,DIGITAL,CAPP.L02.BLOCKED,REALTIME
+Torque,K0420,Float,1,R/W,500,,,,,,,,,Nm,Mo-men xoan van nap,,ANALOG,CAPP.L02.TORQUE,PERIODIC
+CapFeedRate,K0430,Float,1,R/W,500,,,,,,,,,caps/min,Tan suat cap nap,,ANALOG,CAPP.L02.CAPFEEDRATE,PERIODIC
+CapMissing,B0440,Boolean,1,R/W,100,,,,,,,,,-,True khi phat hien thieu nap,,DIGITAL,CAPP.L02.CAPMISSING,REALTIME
+TorqueHigh,B0450,Boolean,1,R/W,100,,,,,,,,,-,True khi mo-men van nap vuot nguong,,DIGITAL,CAPP.L02.TORQUEHIGH,REALTIME

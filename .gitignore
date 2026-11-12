@@ -3,6 +3,8 @@
 __pycache__/
 *.pyc
 .DS_Store
+
+# ─── .NET / dashboard ──────────────────────────────────────────────────────
 **/bin/
 **/obj/
 **/node_modules/
@@ -12,5 +14,40 @@ __pycache__/
 **/*.tsbuildinfo
 **/appsettings.Local.json
 **/artifacts/
-*.log
 .tools/
+
+# ─── Python ────────────────────────────────────────────────────────────────
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+
+# ─── Secrets ───────────────────────────────────────────────────────────────
+# .env chứa cấu hình môi trường thật (broker, OPC UA, mật khẩu) — KHÔNG commit.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+
+# ─── Logs ──────────────────────────────────────────────────────────────────
+logs/
+*.log
+run_*.log
+
+# ─── Test / tooling artifacts ──────────────────────────────────────────────
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+_tag_tables.md
+
+# ─── IDE / OS ──────────────────────────────────────────────────────────────
+.vscode/
+*.swp
+Thumbs.db
+desktop.ini

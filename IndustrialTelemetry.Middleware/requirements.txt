@@ -1,0 +1,20 @@
+# IndustrialTelemetry.Middleware — dependencies
+# Yêu cầu: Python 3.14
+# Cài đặt (Windows):
+#   python -m venv .venv
+#   .venv\Scripts\activate
+#   pip install -r requirements.txt
+#
+# Ghi chú: tên package trên PyPI là `opcua` (KHÔNG phải `python-opcua` —
+# tên đó không tồn tại trên PyPI). Import trong code là `from opcua import Client`.
+# Đây đúng là thư viện mà 2 middleware tham khảo (Laird / Vinamilk) đang dùng.
+# Phiên bản cố định theo middleware Laird để tránh lệch hành vi.
+
+# OPC UA client (đọc dữ liệu từ Kepware)
+opcua==0.98.13
+
+# Kafka producer
+kafka-python==2.2.15
+
+# Config
+python-dotenv==1.1.1

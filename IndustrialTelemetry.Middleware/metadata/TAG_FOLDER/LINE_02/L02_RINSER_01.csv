@@ -1,0 +1,17 @@
+Tag Name,Address,Data Type,Respect Data Type,Client Access,Scan Rate,Scaling,Raw Low,Raw High,Scaled Low,Scaled High,Scaled Data Type,Clamp Low,Clamp High,Eng Units,Description,Negate Value,TagType,TagCode,Acquisition Class
+MachineState,K1240,Int,1,R/W,100,,,,,,,,,-,Trang thai may (enum muc 0-5),,DIGITAL,RINSE.L02.MACHINESTATE,REALTIME
+MachineMode,K1250,Int,1,R/W,100,,,,,,,,,-,"Che do dieu khien: 0 OFF, 1 MANUAL, 2 AUTO, 3 MAINTENANCE",,DIGITAL,RINSE.L02.MACHINEMODE,REALTIME
+EmergencyStop,B1260,Boolean,1,R/W,100,,,,,,,,,-,True khi mach dung khanh dang tac dong,,DIGITAL,RINSE.L02.EMERGENCYSTOP,REALTIME
+AlarmCode,K1270,Int,1,R/W,100,,,,,,,,,-,0 = khong co alarm; gia tri khac 0 la ma alarm dang hoat dong,,DIGITAL,RINSE.L02.ALARMCODE,REALTIME
+CurrentSpeed,K1280,Float,1,R/W,500,,,,,,,,,bottles/min,Toc do thuc te hien tai; ve 0 khi may dung,,ANALOG,RINSE.L02.CURRENTSPEED,PERIODIC
+DesignSpeed,K1290,Float,1,R/W,500,,,,,,,,,bottles/min,Toc do thiet ke / dinh muc mo phong,,ANALOG,RINSE.L02.DESIGNSPEED,PERIODIC
+TotalCounter,K1300,Long,1,R/W,1000,,,,,,,,,pcs,"Tong so don vi may da xu ly, tich luy",,COUNTER,RINSE.L02.TOTALCOUNTER,PERIODIC
+GoodCounter,K1310,Long,1,R/W,1000,,,,,,,,,pcs,So don vi dat theo logic may,,COUNTER,RINSE.L02.GOODCOUNTER,PERIODIC
+DefectCounter,K1320,Long,1,R/W,1000,,,,,,,,,pcs,So don vi loi / loai ra do may ghi nhan,,COUNTER,RINSE.L02.DEFECTCOUNTER,PERIODIC
+Starved,B1330,Boolean,1,R/W,100,,,,,,,,,-,True khi may thieu san pham / nguyen lieu dau vao,,DIGITAL,RINSE.L02.STARVED,REALTIME
+Blocked,B1340,Boolean,1,R/W,100,,,,,,,,,-,True khi dau ra may bi chan do cong doan sau hoac buffer day,,DIGITAL,RINSE.L02.BLOCKED,REALTIME
+RinseWaterPressure,K1350,Float,1,R/W,500,,,,,,,,,bar,Ap suat nuoc rua,,ANALOG,RINSE.L02.RINSEWATERPRESSURE,PERIODIC
+RinseWaterTemp,K1360,Float,1,R/W,500,,,,,,,,,degC,Nhiet do nuoc rua,,ANALOG,RINSE.L02.RINSEWATERTEMP,PERIODIC
+RinseWaterFlowRate,K1370,Float,1,R/W,500,,,,,,,,,m3/h,Lu luong nuoc rua,,ANALOG,RINSE.L02.RINSEWATERFLOWRATE,PERIODIC
+NozzlePressure,K1380,Float,1,R/W,500,,,,,,,,,bar,Ap suat vo phun,,ANALOG,RINSE.L02.NOZZLEPRESSURE,PERIODIC
+CIPPhase,K1390,Int,1,R/W,100,,,,,,,,,-,Pha CIP hien tai (enum muc 0-4),,DIGITAL,RINSE.L02.CIPPHASE,REALTIME
