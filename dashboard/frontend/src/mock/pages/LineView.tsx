@@ -45,7 +45,7 @@ import { MachineGlyph, glyphBg } from "../components/MachineGlyph";
 import {
   EmptyState,
   KpiCard,
-  MockBadge,
+  SourceBadge,
   StatusBadge,
   StatusDot,
   fmtInt,
@@ -63,7 +63,7 @@ export function LineView({
   onOpenMachine: (machineId: string) => void;
   onSelectLine?: (lineId: string) => void;
 }) {
-  const { lines, shared, events, sim } = useTelemetry();
+  const { lines, shared, events, source } = useTelemetry();
   const line = lines.find((l) => l.meta.lineId === lineId);
 
   if (!line) {
@@ -90,7 +90,7 @@ export function LineView({
   );
 
   const trend = buildTrendPoints(
-    sim.outputHistoryOf(meta.lineId).map((p) => ({ at: p.at, good: p.good })),
+    source.outputHistoryOf(meta.lineId).map((p) => ({ at: p.at, good: p.good })),
     0,
   );
   const nowMs = Date.now();
@@ -127,7 +127,7 @@ export function LineView({
             currentId={meta.lineId}
             onSelect={(id) => onSelectLine?.(id)}
           />
-          <MockBadge />
+          <SourceBadge kind={source.kind} />
           <ConnectionBadge connection={connection} />
           <StatusBadge status={status} size="md" />
         </div>

@@ -214,14 +214,32 @@ export function EmptyState({
   );
 }
 
-// ── Badge MOCK — bắt buộc hiển thị khi dùng dữ liệu giả ────────────────
-export function MockBadge() {
+// ── Badge nguồn dữ liệu — bắt buộc hiển thị khi dùng dữ liệu giả ────────
+/**
+ * Hiển thị MOCK / LIVE tùy theo nguồn dữ liệu đang chạy.
+ * · MOCK — dữ liệu giả lập, KHÔNG phải dữ liệu thật từ middleware.
+ * · LIVE — dữ liệu thật từ `state-api` (FastAPI) qua WebSocket.
+ */
+export function SourceBadge({ kind }: { kind: "mock" | "live" }) {
+  if (kind === "live") {
+    return (
+      <span
+        className="mock-badge live"
+        title="Dữ liệu THẬT từ state-api (FastAPI) qua WebSocket /ws/machines"
+      >
+        LIVE
+      </span>
+    );
+  }
   return (
     <span className="mock-badge" title="Dữ liệu MOCK — chưa phải dữ liệu thật từ middleware">
       MOCK
     </span>
   );
 }
+
+/** Tương thích ngược — mặc định là MOCK. */
+export const MockBadge = () => <SourceBadge kind="mock" />;
 
 // ── Định dạng ────────────────────────────────────────────────────────────
 const nf = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });

@@ -178,8 +178,11 @@ test("sidebar: thu gọn/mở rộng được và không có tab Thiết bị", 
   const wide = (await page.locator(".sidebar").boundingBox())!.width;
   await toggle.click();
   await expect(page.locator(".sidebar.sidebar-collapsed")).toBeVisible();
-  const narrow = (await page.locator(".sidebar").boundingBox())!.width;
-  expect(narrow).toBeLessThan(wide);
+  // ⚠ Sidebar có `transition: width 0.18s` → phải CHỜ transition kết thúc
+  //   mới đo được bề rộng (đo ngay sẽ ra đúng số cũ → test fail theo đuôi).
+  await expect
+    .poll(async () => (await page.locator(".sidebar").boundingBox())!.width)
+    .toBeLessThan(wide);
 
   // Mở rộng lại.
   await page.locator(".sidebar-collapse").click();

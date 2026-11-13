@@ -1,11 +1,17 @@
 // ============================================================================
-//  Mock telemetry store — nguồn dữ liệu cho 3 màn mock
-//  Thay thế bằng SignalR store khi tích hợp thật.
+//  Telemetry store — nguồn dữ liệu cho 4 màn.
+//
+//  Nguồn được chọn qua `TelemetrySource` (xem `telemetry-source.ts`):
+//    · MockSource — dữ liệu giả lập (mặc định)
+//    · LiveSource — WebSocket tới `state-api` (FastAPI) của nhánh streaming
+//  Toàn bộ `domain/*` + `pages/*` chỉ biết `TelemetryStore` → đổi nguồn
+//  không cần sửa UI.
 // ============================================================================
 
 import { createContext, useContext } from "react";
 import { MACHINES, type MachineDef } from "./catalog.gen";
-import { MockSimulator, type MockEvent, type MockReading } from "./mock-simulator";
+import { type MockEvent, type MockReading } from "./mock-simulator";
+import type { TelemetrySource } from "./telemetry-source";
 import {
   resolveMachineStatus,
   resolveLineStatus,
@@ -17,9 +23,8 @@ import {
   type ConnectionState,
   type Freshness,
 } from "./domain/quality";
-import { computeOee, yieldRate, availabilityOf, performanceOf, plannedProductionSeconds, idealCycleFromDesignSpeed } from "./domain/oee";
-import { plannedElapsedMinutes, shiftOf } from "./domain/shift";
-import { runFactorOf } from "./domain/runtime";
+import { computeOee, yieldRate, availabilityOf, performanceOf, idealCycleFromDesignSpeed } from "./domain/oee";
+import { shiftOf } from "./domain/shift";
 
 export type LineMeta = {
   lineId: string;
@@ -112,13 +117,15 @@ export type TelemetryStore = {
   events: MockEvent[];
   machines: MachineStateView[];
   byId: (id: string) => MachineStateView | undefined;
-  sim: MockSimulator;
+  /** Nguồn dữ liệu hiện tại — UI dùng để đổi badge MOCK/LIVE. */
+  source: TelemetrySource;
 };
 
 function machineView(
   def: MachineDef,
   reading: MockReading,
   nowMs: number,
+  source: TelemetrySource,
 ): MachineStateView {
   const values = reading.values[def.machineId] ?? {};
   const quality = reading.quality[def.machineId] ?? {};
@@ -132,6 +139,11 @@ function machineView(
     return typeof v === "number" ? v : null;
   };
   const receivedAt = reading.receivedAt[def.machineId] ?? new Date(nowMs).toISOString();
+  // ⚠ Bộ đếm hiển thị phải lấy TỪ NGUỒN, không đọc thẳng `values`.
+  //   · Mock → bộ đếm theo ca (như mọi khi).
+  //   · Live → bộ đếm TĂNG THÊM trong cửa sổ quan sát (thiết bị tích luỹ từ
+  //     lúc bật) → cùng mốc với OEE, không lệch nhau.
+  const counters = source.countersOf(def.machineId, reading);
   return {
     def,
     status,
@@ -142,9 +154,9 @@ function machineView(
     connection: reading.connection[def.channel] ?? "connected",
     freshness: freshnessOf(receivedAt, nowMs),
     speed: { current: num("CurrentSpeed"), design: num("DesignSpeed") },
-    good: num("GoodCounter"),
-    defect: num("DefectCounter"),
-    total: num("TotalCounter"),
+    good: counters.good,
+    defect: counters.defect,
+    total: counters.total,
   };
 }
 
@@ -169,17 +181,31 @@ function machineView(
  * ⚠ Trong mock: bộ đếm được coi là sản lượng TÍCH LUỸ của ca.
  *    Khi tích hợp thật, OEE/sản lượng phải lấy từ API (Spark/PG).
  */
-function computeLineOee(machines: MachineStateView[], nowMs: number) {
+function computeLineOee(
+  machines: MachineStateView[],
+  nowMs: number,
+  source: TelemetrySource,
+  reading: MockReading,
+) {
+  // Bộ đếm trong cửa sổ quan sát của từng máy.
+  const counters = new Map(
+    machines.map((m) => [m.def.machineId, source.countersOf(m.def.machineId, reading)]),
+  );
+
   // Máy có bộ đếm sản phẩm (bỏ qua CIP — chỉ đếm chu kỳ CIP).
-  const producers = machines.filter((m) => m.total != null && m.good != null);
+  const producers = machines.filter((m) => {
+    const c = counters.get(m.def.machineId);
+    return c?.total != null && c?.good != null;
+  });
 
   // Máy tham chiếu = công đoạn CHIẾT (nơi ra sản phẩm chính, đơn vị pcs).
   // Không lấy "máy đầu tiên" vì máy đầu có thể đếm preform/nắp — đơn vị khác.
   const ref =
     producers.find((m) => m.def.processId === "FILLING") ?? producers[0];
 
-  const total = ref?.total ?? 0;
-  const good = ref?.good ?? 0;
+  const refCounters = ref ? counters.get(ref.def.machineId) : undefined;
+  const total = refCounters?.total ?? 0;
+  const good = refCounters?.good ?? 0;
 
   // ── Availability ────────────────────────────────────────────────────
   // Planned Production Time của line = planned time × số máy.
@@ -189,9 +215,9 @@ function computeLineOee(machines: MachineStateView[], nowMs: number) {
   //   RunTime = plannedSec cho mọi máy đang chạy còn bộ đếm thì nhân với
   //   runFactor → Performance = (idealCycle × total)/(runTime) vượt 100% và bị
   //   kẹt ở trần. Vì vậy: RunTime của máy = plannedSec × runFactor(status).
-  const plannedMin = plannedElapsedMinutes(new Date(nowMs));
-  const plannedSec = plannedProductionSeconds(plannedMin);  const runTimeSec = machines.reduce(
-    (sum, m) => sum + plannedSec * runFactorOf(m.status),
+  const plannedSec = source.plannedSec(nowMs);
+  const runTimeSec = machines.reduce(
+    (sum, m) => sum + source.runTimeSecOf(m.def.machineId, m.status, nowMs),
     0,
   );
   const availability = availabilityOf(runTimeSec, plannedSec, machines.length);
@@ -202,7 +228,9 @@ function computeLineOee(machines: MachineStateView[], nowMs: number) {
   //
   // RunTime của MÁY THAM CHIẾU (máy công đoạn chiết) mới là mẫu số — vì
   // Performance đo 1 máy, không đo cả line.
-  const refRunTimeSec = ref ? plannedSec * runFactorOf(ref.status) : 0;
+  const refRunTimeSec = ref
+    ? source.runTimeSecOf(ref.def.machineId, ref.status, nowMs)
+    : 0;
   const idealCycleSec = idealCycleFromDesignSpeed(ref?.speed.design ?? null);
   const performance =
     performanceOf(idealCycleSec, total, refRunTimeSec) ?? 0;
@@ -215,16 +243,16 @@ function computeLineOee(machines: MachineStateView[], nowMs: number) {
   };
 }
 
-export function buildStore(sim: MockSimulator): TelemetryStore {
-  const reading = sim.tick();
+export function buildStore(source: TelemetrySource): TelemetryStore {
+  const reading = source.read();
   const nowMs = Date.now();
-  const machines = MACHINES.map((m) => machineView(m, reading, nowMs));
+  const machines = MACHINES.map((m) => machineView(m, reading, nowMs, source));
   const byIdMap = new Map(machines.map((m) => [m.def.machineId, m]));
 
   const lineIds = ["LINE_01", "LINE_02", "LINE_03"];
   const lines: LineView[] = lineIds.map((lineId) => {
     const ms = machines.filter((m) => m.def.lineId === lineId);
-    const { oee, output } = computeLineOee(ms, nowMs);
+    const { oee, output } = computeLineOee(ms, nowMs, source, reading);
     const meta: LineMeta = { ...LINE_META[lineId], shift: shiftOf().label };
     return {
       meta,
@@ -244,10 +272,10 @@ export function buildStore(sim: MockSimulator): TelemetryStore {
     reading,
     lines,
     shared,
-    events: sim.events,
+    events: source.events,
     machines,
     byId: (id) => byIdMap.get(id),
-    sim,
+    source,
   };
 }
 

@@ -19,7 +19,7 @@ import {
 import { useTelemetry } from "../store";
 import { STATUS_META, type MachineStatus } from "../domain/state";
 import { fmtClock } from "../domain/time";
-import { EmptyState, MockBadge, StatusBadge, fmtInt } from "../components/common";
+import { EmptyState, SourceBadge, StatusBadge, fmtInt } from "../components/common";
 
 /** Nhãn mức độ — không gán severity mới, chỉ hiển thị theo nguồn sự kiện. */
 const SEV_LABEL: Record<"info" | "warn" | "crit", string> = {
@@ -50,7 +50,7 @@ export function AlarmCenter({
   onBack: () => void;
   onOpenMachine: (machineId: string) => void;
 }) {
-  const { machines, events, lines } = useTelemetry();
+  const { machines, events, lines, source } = useTelemetry();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [lineFilter, setLineFilter] = useState<string>("all");
@@ -152,7 +152,7 @@ export function AlarmCenter({
           </p>
         </div>
         <div className="head-right">
-          <MockBadge />
+          <SourceBadge kind={source.kind} />
         </div>
       </header>
 

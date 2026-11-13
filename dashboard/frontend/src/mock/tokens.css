@@ -92,6 +92,9 @@
   --mock-badge-fg: #b45309;
   --mock-badge-bg: #f59e0b1f;
   --mock-badge-border: #f59e0b66;
+  --live-badge-fg: #15803d;
+  --live-badge-bg: #22c55e1f;
+  --live-badge-border: #22c55e66;
   --overlay-scrim: #0f172a66;
   --kpi-accent-border: #2563eb55;
   --kpi-accent-grad: #2563eb12;
@@ -210,6 +213,9 @@
   --mock-badge-fg: #fbbf24;
   --mock-badge-bg: #fbbf241a;
   --mock-badge-border: #fbbf2455;
+  --live-badge-fg: #4ade80;
+  --live-badge-bg: #22c55e1a;
+  --live-badge-border: #22c55e55;
   --overlay-scrim: #02061799;
   --kpi-accent-border: #2563eb55;
   --kpi-accent-grad: #1d4ed814;

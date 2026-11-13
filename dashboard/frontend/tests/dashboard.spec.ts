@@ -1,4 +1,38 @@
+// ============================================================================
+//  Test cho TRANG CHẨN ĐOÁN PIPELINE (/diagnostics.html) — app "Factory Pulse".
+//
+//  ⚠ YÊU CẦU HẠ TẦNG: các test này CẦN backend .NET cũ (Factory.Api) chạy
+//    ở http://localhost:5080 (SignalR `/hubs/telemetry` + REST `/api/snapshot`).
+//    Không có backend → TẤT CẢ test fail (không phải do lỗi UI).
+//
+//    → Vì vậy file này được đánh dấu `test.skip` khi backend không chạy.
+//      Chạy riêng nhóm UI vận hành (không cần backend):
+//        npx playwright test tests/mock-ui.spec.ts tests/live-ws.spec.ts
+//
+//  Lưu ý: nhóm này KHÔNG liên quan tới tích hợp WebSocket `state-api`
+//  (xem docs/INTEGRATION_LIVE_WS_2026-11-13.md).
+// ============================================================================
+
 import { test, expect } from "@playwright/test";
+
+/** Backend .NET cũ có đang chạy không? */
+async function legacyBackendUp(baseURL: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${baseURL}/api/snapshot`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+test.beforeEach(async ({ baseURL }) => {
+  test.skip(
+    !(await legacyBackendUp(baseURL!)),
+    "Cần backend .NET cũ ở :5080 (SignalR /hubs/telemetry) — bỏ qua test chẩn đoán.",
+  );
+});
 
 async function maskTelemetry(
   page: import("@playwright/test").Page,

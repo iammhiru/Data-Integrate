@@ -52,7 +52,7 @@ export function MachineDetail({
   machineId: string;
   onClose: () => void;
 }) {
-  const { byId, sim } = useTelemetry();
+  const { byId, source } = useTelemetry();
   const [tab, setTab] = useState<Tab>("overview");
   const machine = byId(machineId);
 
@@ -581,7 +581,7 @@ function ChartTab({
 }: {
   machine: ReturnType<typeof useTelemetry>["machines"][number];
 }) {
-  const { sim } = useTelemetry();
+  const { source } = useTelemetry();
   const candidates = machine.def.tags.filter(
     (t) => t.dataType === "Float" && t.tagType === "ANALOG",
   );
@@ -619,7 +619,7 @@ function ChartTab({
         <EmptyState title="Chưa chọn tag" desc="Chọn ít nhất một thông số để xem xu hướng" />
       ) : (
         selected.map((name) => {
-          const hist = sim.historyOf(machine.def.machineId, name);
+          const hist = source.historyOf(machine.def.machineId, name);
           const points = hist.map((h) => h.value);
           const tag = machine.def.tags.find((t) => t.name === name);
           return (

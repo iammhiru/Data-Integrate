@@ -28,13 +28,13 @@ import { t, tip } from "../domain/terms";
 import { StatusSummary } from "../components/StatusSummary";
 import {
   KpiCard,
-  MockBadge,
+  SourceBadge,
   StatusBadge,
   fmtInt,
 } from "../components/common";
 
 export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => void }) {
-  const { lines, shared, machines, events, sim } = useTelemetry();
+  const { lines, shared, machines, events, source } = useTelemetry();
   // KPI tổng toàn nhà máy.
   // Sản lượng = TỔNG các line (mỗi line đếm riêng sản phẩm của nó).
   // OEE = trung bình GIA QUYỀN theo sản lượng từng line (không cộng trung bình cộng).
@@ -83,7 +83,7 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
   const plantStatusCounts = useMemo(() => countByStatus(machines.map((m) => m.status)), [machines]);
 
   // Xu hướng sản lượng toàn nhà máy = tổng các line theo thời gian.
-  const plantTrend = buildPlantTrend(lines, sim);
+  const plantTrend = buildPlantTrend(lines, source);
 
   return (
     <div className="page page-plant">
@@ -96,7 +96,7 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
           </p>
         </div>
         <div className="head-right">
-          <MockBadge />
+          <SourceBadge kind={source.kind} />
         </div>
       </header>
 
@@ -126,6 +126,9 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
             <>
               A {pct(avg.availability)} · P {pct(avg.performance)} · Q{" "}
               {pct(avg.quality)}
+              {source.kind === "live" && (
+                <> · cửa sổ: {source.windowLabel()}</>
+              )}
             </>
           }
         />
@@ -238,12 +241,12 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
 // ── Xu hưởng toàn nhà máy ───────────────────────────────────────────────
 function buildPlantTrend(
   lines: LineView[],
-  sim: ReturnType<typeof useTelemetry>["sim"],
+  source: ReturnType<typeof useTelemetry>["source"],
 ): TrendPoint[] {
   // Gom điểm theo mốc thời gian (giây) của từng line rồi cộng lại.
   const buckets = new Map<number, number>();
   for (const l of lines) {
-    for (const p of sim.outputHistoryOf(l.meta.lineId)) {
+    for (const p of source.outputHistoryOf(l.meta.lineId)) {
       const key = Math.floor(p.at / 1000);
       buckets.set(key, (buckets.get(key) ?? 0) + p.good);
     }

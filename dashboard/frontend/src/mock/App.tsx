@@ -33,7 +33,8 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 import { MACHINES } from "./catalog.gen";
-import { MockSimulator } from "./mock-simulator";
+import { MockSource, type TelemetrySource } from "./telemetry-source";
+import { LiveSource, liveEnabled } from "./live-source";
 import { buildStore, TelemetryContext, type TelemetryStore } from "./store";
 import { PlantOverview } from "./pages/PlantOverview";
 import { LineView } from "./pages/LineView";
@@ -52,8 +53,17 @@ type Page = "plant" | "line" | "alarms";
 type Drawer = { machineId: string; fromLine?: string } | null;
 
 export default function MockApp() {
-  const sim = useMemo(() => new MockSimulator(MACHINES), []);
-  const [store, setStore] = useState<TelemetryStore>(() => buildStore(sim));
+  /**
+   * Nguồn dữ liệu — chọn theo `?source=live|mock` (hoặc biến môi trường
+   * `VITE_DATA_SOURCE`). Mặc định là MOCK để app chạy độc lập.
+   */
+  const source = useMemo<TelemetrySource>(
+    () => (liveEnabled() ? new LiveSource() : new MockSource(MACHINES)),
+    [],
+  );
+  const isLive = source.kind === "live";
+
+  const [store, setStore] = useState<TelemetryStore>(() => buildStore(source));
   const [page, setPage] = useState<Page>("plant");
   const [lineId, setLineId] = useState<string>("LINE_01");
   const [drawer, setDrawer] = useState<Drawer>(null);
@@ -64,25 +74,55 @@ export default function MockApp() {
   // Vòng cập nhật 1 Hz — tương đương SignalR push 1 snapshot/s.
   useEffect(() => {
     const t = setInterval(() => {
-      setStore(buildStore(sim));
+      setStore(buildStore(source));
     }, 1000);
     return () => clearInterval(t);
-  }, [sim]);
+  }, [source]);
 
-  // Ghi lịch sử cho sparkline.
+  /**
+   * Nguồn LIVE tự đẩy dữ liệu qua WebSocket (`state-api` gom thay đổi mỗi
+   * 250 ms). Ta dựng lại store theo nhịp 500 ms + nhịp 1 Hz ở trên để:
+   *   · UI vẫn "thở" theo thời gian thực,
+   *   · không dựng lại toàn bộ store 4 lần/giây (recharts rất nặng).
+   */
   useEffect(() => {
-    for (const m of store.machines) {
-      for (const t of m.def.tags) {
-        if (t.tagType !== "ANALOG") continue;
-        const v = m.values[t.name];
-        if (typeof v === "number") sim.pushHistory(m.def.machineId, t.name, v);
+    source.start();
+    let last = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const rebuild = () => {
+      last = Date.now();
+      setStore(buildStore(source));
+    };
+    const off = source.onChange(() => {
+      const now = Date.now();
+      const wait = 500 - (now - last);
+      if (wait <= 0) {
+        rebuild();
+      } else if (!timer) {
+        timer = setTimeout(() => {
+          timer = null;
+          rebuild();
+        }, wait);
       }
-    }
-    // Lịch sử sản lượng theo line (để vẽ Production Trend).
-    for (const l of store.lines) {
-      sim.pushOutput(l.meta.lineId, l.output.good, l.output.total);
-    }
-  }, [store, sim]);
+    });
+    return () => {
+      off();
+      if (timer) clearTimeout(timer);
+      source.stop();
+    };
+  }, [source]);
+
+  // Ghi lịch sử cho sparkline + xu hướng sản lượng (mỗi lần store đổi).
+  useEffect(() => {
+    source.record(
+      store.reading,
+      store.lines.map((l) => ({
+        lineId: l.meta.lineId,
+        good: l.output.good,
+        total: l.output.total,
+      })),
+    );
+  }, [store, source]);
 
   const openLine = useCallback((id: string) => {
     setLineId(id);
@@ -126,12 +166,22 @@ export default function MockApp() {
         <div className="main">
           <TopBar
             store={store}
-            connected={connected}
+            connected={
+              isLive ? store.source.connectionLabel() === "Đang kết nối" : connected
+            }
+            connLabel={
+              isLive
+                ? store.source.connectionLabel()
+                : connected
+                  ? "Đang kết nối"
+                  : "Mất kết nối"
+            }
             onToggleConnection={() => setConnected((c) => !c)}
             currentLine={currentLine}
             onOpenAlarms={() => navigate("alarms")}
             theme={theme}
             onToggleTheme={toggleTheme}
+            isLive={isLive}
           />
           <main className="content">
             {/*
@@ -246,19 +296,23 @@ function Sidebar({
 function TopBar({
   store,
   connected,
+  connLabel,
   onToggleConnection,
   currentLine,
   onOpenAlarms,
   theme,
   onToggleTheme,
+  isLive,
 }: {
   store: TelemetryStore;
   connected: boolean;
+  connLabel: string;
   onToggleConnection: () => void;
   currentLine?: string;
   onOpenAlarms: () => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
+  isLive: boolean;
 }) {
   const alarmCount = store.machines.filter((m) => m.values.AlarmCode).length;
 
@@ -295,6 +349,22 @@ function TopBar({
           >
             Chẩn đoán dữ liệu
           </a>
+          {/*
+            CHUYỂN NGUỒN DỮ LIỆU — MOCK ⇄ LIVE.
+            Đổi nguồn = đổi query param `?source=` → app reload với nguồn mới.
+            LIVE cần `state-api` (FastAPI) chạy ở localhost:8000.
+          */}
+          <a
+            className="source-switch"
+            href={isLive ? "/?source=mock" : "/?source=live"}
+            title={
+              isLive
+                ? "Đang dùng dữ liệu THẬT — bấm để chuyển sang MOCK"
+                : "Đang dùng dữ liệu MOCK — bấm để chuyển sang LIVE (state-api)"
+            }
+          >
+            {isLive ? "LIVE" : "MOCK"} ⇄
+          </a>
           <button
             className="theme-toggle"
             onClick={onToggleTheme}
@@ -307,9 +377,14 @@ function TopBar({
         <button
           className={`conn${connected ? " ok" : " bad"}`}
           onClick={onToggleConnection}
-          title="Nhấn để mô phỏng mất kết nối / kết nối lại"
+          disabled={isLive}
+          title={
+            isLive
+              ? "Kết nối tới state-api (FastAPI) qua WebSocket"
+              : "Nhấn để mô phỏng mất kết nối / kết nối lại"
+          }
         >
-          {connected ? "Đang kết nối" : "Mất kết nối"}
+          {connLabel}
         </button>
         <button className="bell" onClick={onOpenAlarms} aria-label={`${alarmCount} alarm đang mở`}>
           <Bell size={16} aria-hidden="true" />

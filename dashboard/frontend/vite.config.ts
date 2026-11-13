@@ -25,6 +25,14 @@ export default defineConfig({
       '/api': 'http://localhost:5080',
       '/health': 'http://localhost:5080',
       '/hubs': { target: 'http://localhost:5080', ws: true },
+      // `state-api` (FastAPI, nhánh streaming) — WebSocket /ws/machines.
+      // Tiền tố `/state-api` chỉ để tránh đụng `/api` của backend .NET cũ;
+      // phải BÓC tiền tố trước khi chuyển tiếp (FastAPI không có prefix này).
+      '/state-api': {
+        target: 'http://localhost:8000',
+        ws: true,
+        rewrite: (p) => p.replace(/^\/state-api/, ''),
+      },
     },
   },
 });
