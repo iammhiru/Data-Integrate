@@ -236,6 +236,9 @@ def main() -> int:
         # Guard im lặng
         opc_service.tick_inactivity()
 
+        # Đọc lại tag tĩnh theo chu kỳ (giữ eventTime "sống")
+        opc_service.tick_refresh()
+
         # Xử lý yêu cầu reconnect (kèm backoff nếu thất bại)
         if ReconnectController.is_requested():
             opc_service.reconnect_with_backoff()

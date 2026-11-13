@@ -19,11 +19,13 @@ Backoff: 1s → 2s → 5s → 10s → 20s → 30s (giữ ở mức cuối), kèm
 
 from __future__ import annotations
 
+import datetime as dt
 import logging
 import threading
 import time
 
 from config import settings
+from core.dedup import normalize_value
 from core.state_machine import (
     ConnectionState,
     OpcConnectionState,
@@ -36,6 +38,7 @@ from core.subscription import (
     subscribe_all,
     unsubscribe,
 )
+from utils.status_codes import is_bad_status
 
 logger = logging.getLogger("industrial_telemetry.opcua")
 
@@ -102,6 +105,13 @@ class OpcUaService:
         #: Chu kỳ đầu tiên luôn được coi là STABLE (xem connect_and_subscribe).
         self._first_cycle_done = False
 
+        #: Mốc thời gian lần refresh gần nhất (monotonic) — cho cơ chế
+        #: periodic refresh (đọc lại tag tĩnh).
+        self._last_refresh_mono = 0.0
+
+        #: Con trỏ xoay vòng qua danh sách tag khi refresh (0 = bắt đầu).
+        self._refresh_cursor = 0
+
     # ── log handler ─────────────────────────────────────────────────────────
 
     def install_log_handler(self) -> None:
@@ -150,6 +160,22 @@ class OpcUaService:
             return False
 
         self.connection_state.set_state(OpcConnectionState.SUBSCRIBING)
+
+        # ── Cổng chặn STABLE ─────────────────────────────────────────────
+        # Với PUBLISH_INITIAL_SNAPSHOT, mở cổng TRƯỚC khi subscribe:
+        # nếu không, lô datachange đầu tiên (mà ta muốn phát) sẽ tới lúc
+        # connection_state vẫn còn ở SUBSCRIBING / active=False → bị cổng
+        # chặn bỏ qua.
+        #
+        # An toàn: đây là chu kỳ khởi động đầu tiên, subscribe ratio chưa biết,
+        # nhưng chỉ gate theo state — mọi tag đều có quality Good từ Kepware.
+        if settings.PUBLISH_INITIAL_SNAPSHOT and not self._first_cycle_done:
+            self.connection_state.set_state(
+                OpcConnectionState.STABLE,
+                "initial snapshot publish — gate open",
+            )
+            self.connection_state.set_active(True)
+
         handler = SubHandler(
             registry=self._registry,
             connection_state=self.connection_state,
@@ -186,9 +212,23 @@ class OpcUaService:
         # ── Baseline snapshot ────────────────────────────────────────────
         # Chụp giá trị hiện tại của mọi node, KHÔNG phát ra Kafka. Loại bỏ
         # nguồn nhiễu lớn nhất sau reconnect.
-        for tag_def in tags:
-            if tag_def.node_id in self._registry.valid:
-                capture_baseline(self._registry, tag_def.node_id)
+        #
+        # Ngoại lệ (PUBLISH_INITIAL_SNAPSHOT=True): ở chu kỳ khởi động ĐẦU
+        # TIÊN, ta KHÔNG chụp baseline — để lần datachange đầu tiên của mỗi
+        # node được phát đi ngay. Nhờ vậy dashboard có trạng thái hiện tại của
+        # toàn bộ máy ngay khi bật, thay vì phải chờ giá trị đổi lần đầu.
+        #
+        # Sau reconnect (first_cycle_done=True) cơ chế chặn baseline replay vẫn
+        # hoạt động bình thường để không phát lại lô giá trị cũ.
+        if settings.PUBLISH_INITIAL_SNAPSHOT and not self._first_cycle_done:
+            logger.info(
+                "[OPC] PUBLISH_INITIAL_SNAPSHOT=true — bo qua chan baseline "
+                "replay cho chu ky khoi dong dau tien"
+            )
+        else:
+            for tag_def in tags:
+                if tag_def.node_id in self._registry.valid:
+                    capture_baseline(self._registry, tag_def.node_id)
 
         self.connection_state.set_active(True)
 
@@ -309,6 +349,97 @@ class OpcUaService:
                 f"No datachange for {idle}s "
                 f"(threshold={settings.INACTIVITY_TIMEOUT_S}s)"
             )
+
+    # ── periodic refresh ───────────────────────────────────────────────────
+
+    def tick_refresh(self) -> None:
+        """
+        Đọc lại giá trị hiện tại của các tag theo chu kỳ.
+
+        VÌ SAO CẦN:
+          Subscription chỉ báo khi giá trị THAY ĐỔI. Với tag tĩnh (máy dừng,
+          counter đứng yên), không có datachange nào → `eventTime` của bản ghi
+          cũ dần "hết hạn" → dashboard hiển thị NO_DATA dù kết nối hoàn hảo.
+
+          Cơ chế này đọc lại node (giống polling của OPC UA client thông
+          thường) và đẩy vào đúng hàng đợi, đúng đường ống như datachange.
+          Dedup vẫn hoạt động bình thường: chỉ khi timestamp nguồn/giá trị
+          thực sự khác mới phát.
+
+        Chạy ở thread chính (vòng tick 0.5s), mỗi lần chỉ đọc tối đa
+        ``REFRESH_BATCH_SIZE`` node để không tắc cổng chặn STABLE quá lâu.
+        """
+        if settings.REFRESH_INTERVAL_S <= 0:
+            return
+
+        now = time.monotonic()
+        if now - self._last_refresh_mono < settings.REFRESH_INTERVAL_S:
+            return
+        self._last_refresh_mono = now
+
+        if not self.connection_state.should_publish():
+            return
+
+        client = self._client
+        if client is None:
+            return
+
+        tag_defs = self._tags_provider()
+        if not tag_defs:
+            return
+
+        # Xoay vòng qua các tag để không bao giờ đọc hết 404 node trong 1 lượt.
+        total = len(tag_defs)
+        batch = min(settings.REFRESH_BATCH_SIZE, total)
+        start = self._refresh_cursor % total
+        selected = [tag_defs[(start + i) % total] for i in range(batch)]
+        self._refresh_cursor = (start + batch) % total
+
+        now_utc = dt.datetime.now(tz=dt.timezone.utc)
+        sent = 0
+        for tag_def in selected:
+            node = self._registry.node_by_id.get(tag_def.node_id)
+            if node is None:
+                continue
+            try:
+                dv = node.get_data_value()
+                raw = dv.Value.Value if dv is not None and dv.Value is not None else None
+                # StatusCode nằm ở cấp DataValue (không phải ở trong Variant).
+                status = dv.StatusCode if dv is not None else None
+                ts = dv.SourceTimestamp if dv is not None else None
+            except Exception as exc:  # noqa: BLE001
+                logger.debug("[REFRESH] Read failed node=%s: %s", tag_def.node_id, exc)
+                continue
+
+            if raw is None:
+                continue
+
+            # Bỏ qua giá trị quality Bad/Uncertain — giống SubHandler, để
+            # không phát ra giá trị 0 gây hiểu sai (counter reset, máy dừng).
+            if is_bad_status(status):
+                continue
+
+            # Timestamp nguồn: ưu tiên SourceTimestamp của Kepware (Kepware
+            # cập nhật nó ở MỖI lần scan, kể cả khi giá trị không đổi) → nhờ đó
+            # eventTime của bản ghi vẫn "sống" dù tag tĩnh.
+            src_ts = ts or now_utc
+
+            self._enqueue(
+                {
+                    "node_id": tag_def.node_id,
+                    "tag_def": tag_def,
+                    "value": normalize_value(raw),
+                    "raw_value": raw,
+                    "source_timestamp": src_ts,
+                    "server_timestamp": now_utc,
+                    "quality_raw": status,
+                    "force": False,
+                }
+            )
+            sent += 1
+
+        if sent:
+            logger.info("[REFRESH] Re-read %d/%d tag(s)", sent, total)
 
     def request_reconnect(self, reason: str) -> None:
         """Yêu cầu reconnect từ bất kỳ thread nào."""

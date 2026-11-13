@@ -139,6 +139,41 @@ STABLE_QUIET_SECONDS: int = _int("STABLE_QUIET_SECONDS", 10, minimum=0)
 #: Tỷ lệ subscribe thành công tối thiểu để được coi là STABLE.
 STABLE_MIN_SUBSCRIBE_RATIO: float = _float("STABLE_MIN_SUBSCRIBE_RATIO", 0.90, minimum=0.0)
 
+# ─── Periodic refresh (giữ dữ liệu "sống") ────────────────────────────────
+
+#: Chu kỳ (giây) đọc lại giá trị hiện tại của toàn bộ tag đang subscribe.
+#:
+#: VÌ SAO CẦN:
+#:   Middleware chỉ phát message khi giá trị THAY ĐỔI (change-detection dedup).
+#:   Với Kepware, tag tĩnh (máy dừng, counter không tăng) sẽ không bao giờ
+#:   sinh message mới → `eventTime` của bản ghi cũ dần "hết hạn" → dashboard
+#:   hiển thị NO_DATA dù kết nối vẫn tốt.
+#:
+#:   Cơ chế này mô phỏng polling của một OPC UA client thông thường: đọc lại
+#:   giá trị, và nếu timestamp nguồn thay đổi (Kepware cập nhật
+#:   SourceTimestamp khi scan) thì phát đi.
+#:
+#:   Đặt 0 để tắt hoàn toàn.
+REFRESH_INTERVAL_S: float = _float("REFRESH_INTERVAL_S", 20.0, minimum=0.0)
+
+#: Số tag đọc lại trong MỘT lượt refresh. Chia để tránh một lần đọc quá
+#: lâu làm tắc cổng chặn STABLE (mỗi node đọc là 1 round-trip).
+REFRESH_BATCH_SIZE: int = _int("REFRESH_BATCH_SIZE", 40, minimum=1)
+
+# ─── Baseline replay ────────────────────────────────────────────────────────
+
+#: True → ở lần khởi động ĐẦU TIÊN, middleware PHÁT giá trị hiện tại của
+#: mọi tag lên Kafka (bỏ qua cơ chế chặn "baseline replay").
+#:
+#: Mặc định là False vì baseline replay là nguồn nhiễu lớn nhất sau reconnect.
+#: Nhưng khi dashboard cần hiển thị trạng thái hiện tại ngay khi bật (trạng
+#: thái máy, tốc độ, counter), bật cờ này lên True: lần đầu sẽ có dữ liệu
+#: đầy đủ cho toàn bộ máy.
+#:
+#: ⚠ Cờ này CHỈ áp dụng cho chu kỳ khởi động đầu tiên. Sau reconnect, cơ chế
+#: chặn baseline replay vẫn hoạt động bình thường.
+PUBLISH_INITIAL_SNAPSHOT: bool = _bool("PUBLISH_INITIAL_SNAPSHOT", False)
+
 # ─── Simulation mode (giả lập — KHÔNG cần Kepware) ──────────────────────────
 
 #: True → middleware KHÔNG kết nối Kepware, tự sinh dữ liệu giả lập cho toàn bộ
