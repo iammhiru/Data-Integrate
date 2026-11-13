@@ -1,103 +1,151 @@
-# Smart Manufacturing - Big Data Pipeline (Nhóm 18)
+# Smart Manufacturing - Realtime Machine State (Nhóm 18)
 
-Kepware/OPC UA → Middleware → **Kafka** → **Spark Structured Streaming** → **MinIO** (raw) → **Spark Batch** → **PostgreSQL** → .NET / Dashboard
+Middleware (giả lập Kepware) → **Kafka** → **Spark Structured Streaming** → **Kafka compacted topic** → **REST API**
 
-Thiết kế chi tiết: [`docs/architecture.txt`](docs/architecture.txt)
-
-## Dashboard
-
-Backend, Kafka Consumer, SignalR và frontend nằm trong [`dashboard/`](dashboard/README.md).
-Dashboard đọc topic **`realtime-metrics`** từ Spark và các bảng PostgreSQL.
-
-```bash
-docker compose up -d --build --wait dashboard   # http://localhost:5080
-docker compose --profile streaming up -d       # bật producer Spark theo hướng dẫn bên dưới
+```
+middleware-sim ──▶ industrial.telemetry ──▶ stream-machine-state ──▶ machine-state ──▶ state-api :8000
+(26 máy, 404 tag)   (1 msg = 1 tag đổi)       (Spark, trigger 1s)      (compacted)      (FastAPI)
 ```
 
-Mock độc lập: `docker compose -f dashboard/compose.mock.yaml up -d --build --wait`, mở http://localhost:5082.
+## Yêu cầu
 
-## Khởi động
+- Docker Desktop (Compose v2), cấp cho Docker **≥ 4 CPU, ≥ 6 GB RAM**.
+- Các cổng trống: 8000, 8080, 8081, 8082, 9000, 9001, 9094, 5432, 4043.
+
+## Dựng hệ thống
 
 ```bash
-cp .env.example .env          # lần đầu
-docker compose up -d --build  # build image Spark (kèm jar Kafka/S3A/JDBC) và chạy toàn bộ
-docker compose ps
+cp .env.example .env                                   # lần đầu
+docker compose --profile telemetry up -d --build       # build + chạy toàn bộ
+docker compose --profile telemetry ps                  # kiểm tra trạng thái
 ```
 
-`kafka-init` (tạo topic) và `minio-init` (tạo bucket) chạy một lần rồi thoát (`Exited (0)` là bình thường).
-PostgreSQL tự tạo schema và master data từ `postgres/init/*.sql` khi volume còn trống.
+Lần đầu build mất vài phút. `kafka-init` / `minio-init` chạy một lần rồi thoát (`Exited (0)` là bình thường).
+Đợi API nạp xong dữ liệu (`"ready": true`):
 
-| Service | Trong mạng docker | Từ máy host |
+```bash
+curl http://localhost:8000/health
+```
+
+| Service | Vai trò | Truy cập từ máy host |
 |---|---|---|
-| Kafka | `kafka:9092` | `localhost:9094` |
-| Kafka UI (xem topic, message, consumer group) | | http://localhost:8082 |
-| MinIO S3 API / Console | `http://minio:9000` | http://localhost:9000 / http://localhost:9001 |
-| PostgreSQL | `postgres:5432` | `localhost:5432` |
-| Spark master | `spark://spark-master:7077` | UI http://localhost:8080 |
-| Spark worker UI | | http://localhost:8081 |
-| Spark UI job raw ingest / realtime | | http://localhost:4041 / http://localhost:4042 |
+| `middleware-sim` | IndustrialTelemetry.Middleware chạy `SIMULATION_MODE=true`, phát dữ liệu 26 máy vào `industrial.telemetry` | |
+| `stream-machine-state` | Spark job `spark/apps/machine_state_stream.py`: giữ giá trị mới nhất mỗi (máy, tag) → `machine-state` | Spark UI http://localhost:4043 |
+| `state-api` | API đọc topic `machine-state` | http://localhost:8000 (Swagger: `/docs`) |
+| `kafka` / `kafka-ui` | Broker + giao diện xem topic | `localhost:9094` / http://localhost:8082 |
+| `spark-master` / `spark-worker` | Cụm Spark | http://localhost:8080 / http://localhost:8081 |
+| `minio`, `postgres`, `dashboard` | Lưu trữ / dashboard của nhóm (xem `dashboard/README.md`) | 9001 / 5432 / 5080 |
 
-Tài khoản mặc định nằm trong `.env`.
+## Gọi API (Postman / curl)
 
-## Streaming jobs (chạy nền)
+Base URL: `http://localhost:8000`
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| GET | `/health` | API đã nạp xong snapshot chưa, số máy / tag |
+| GET | `/api/machines` | Danh sách máy + trạng thái tóm tắt. Lọc: `?lineId=LINE_01`, `?machineType=CAN_FILLER`, `?state=RUNNING` |
+| GET | `/api/machines/{machineId}` | Trạng thái mới nhất + toàn bộ tag của 1 máy |
+| GET | `/api/machines/{machineId}/tags/{tagName}` | Giá trị mới nhất của 1 tag |
+| GET | `/api/lines` | Số máy theo line và trạng thái |
+
+Ví dụ:
 
 ```bash
-docker compose --profile streaming up -d     # stream-raw-ingest (luồng A) + stream-realtime (luồng B)
-docker compose logs -f stream-realtime       # mỗi 30s in throughput / thời gian xử lý từng query
-./scripts/live_producer.sh                   # phát event realtime (MACHINES=50 RATE=2 SECONDS_=120)
+curl http://localhost:8000/api/machines/L01_FILLER_01
+curl http://localhost:8000/api/machines/L01_FILLER_01/tags/FillLevel
+curl "http://localhost:8000/api/machines?lineId=LINE_03&state=RUNNING"
+curl http://localhost:8000/api/lines
 ```
 
-Luồng B (`spark/apps/realtime_metrics.py`) đọc `machine-telemetry` + `production-events`, gom theo window
-5s / 1 phút, ghi ra topic **`realtime-metrics`** (cho backend .NET đẩy WebSocket) và upsert
-`machine_status_current`, `machine_metric_1m` trong PostgreSQL.
-
-Message trên `realtime-metrics` (key = machineId):
+Response `GET /api/machines/L01_FILLER_01` (rút gọn):
 
 ```json
-{"machineId":"M001","status":"RUNNING","avgTemperature":72.4,"avgPressure":5.5,"avgSpeed":1450.2,
- "sumEnergy":10.3,"sampleCount":10,"missingCount":0,"lastEventTime":"...","maxIngestedAt":"...",
- "windowStart":"...","windowEnd":"...","metricType":"machine.status.5s","emittedAt":"...","latencyMs":2350.1}
+{
+  "machineId": "L01_FILLER_01", "plantId": "PLANT_01", "lineId": "LINE_01",
+  "processId": "FILLING", "machineType": "CARBONATED_FILLER", "equipmentCode": "FILL-L01-01",
+  "sourceSystem": "simulator",
+  "state": "RUNNING",
+  "stateSince": "2026-11-12T15:14:57.375Z",
+  "summary": { "MachineState": 2, "CurrentSpeed": 149.2, "TotalCounter": 23, "EmergencyStop": false, "...": "..." },
+  "tagCount": 18,
+  "lastEventTime": "2026-11-12T15:15:00.758Z",
+  "ageSeconds": 1.3,
+  "stale": false,
+  "tags": {
+    "FillLevel": { "value": 33.765, "valueType": "Float", "unit": "%", "statusCode": "Good", "isGood": true,
+                   "tagCode": "FILL.L01.FILLLEVEL", "tagType": "ANALOG",
+                   "eventTime": "2026-11-12T15:15:00.758Z", "emittedAt": "2026-11-12T15:15:01.167Z" },
+    "MachineState": { "value": 2, "stateName": "RUNNING", "...": "..." }
+  }
+}
 ```
 
-`metricType`: `machine.status.5s` | `machine.metric.1m` | `production.rate.1m`.
+- `state`: `OFF` / `STARTING` / `RUNNING` / `STOPPED` / `FAULTED` / `MAINTENANCE` (từ tag `MachineState`).
+- `ageSeconds`: số giây kể từ event mới nhất của máy; `stale = true` khi > 60s (đổi bằng env `STALE_AFTER_SEC`).
+- `value = null` kèm `statusCode = "Bad"` nghĩa là không đọc được giá trị (không phải 0).
 
-Đo latency: `docker compose exec -T kafka /opt/kafka/bin/kafka-console-consumer.sh --bootstrap-server kafka:9092 --topic realtime-metrics --from-beginning --max-messages 5000 --timeout-ms 10000 | python3 scripts/measure_latency.py`
+## Realtime qua WebSocket
 
-## Chạy Spark job thủ công
+Trang xem nhanh: **http://localhost:8000/ui** (HTML thuần, nhận WebSocket, thẻ máy nháy khi có cập nhật, bấm vào máy để xem toàn bộ tag).
+
+`ws://localhost:8000/ws/machines` (Postman: **New → WebSocket**). Lọc tuỳ chọn: `?machineId=L01_FILLER_01` (nhiều máy cách nhau dấu phẩy) hoặc `?lineId=LINE_03`.
+
+Server gửi:
+
+| `type` | Khi nào | Nội dung |
+|---|---|---|
+| `snapshot` | ngay khi kết nối / đổi bộ lọc | `machines`: toàn bộ máy theo bộ lọc, mỗi máy giống `GET /api/machines/{id}` |
+| `patch` | có tag thay đổi (gom mỗi 250 ms) | `machines`: summary của máy + `tags` **chỉ gồm tag vừa đổi** |
+| `heartbeat` | 15 s không có gì để gửi | `serverTime`, `ready` |
+
+Client có thể gửi (tuỳ chọn):
+
+```json
+{"action": "subscribe", "machineIds": ["L01_FILLER_01"], "lineId": null}
+{"action": "ping"}
+```
+
+Frontend: gán state = `snapshot`, mỗi `patch` thì ghi đè summary của máy và merge `tags` theo `tagName`.
+Mất kết nối thì kết nối lại, server tự gửi snapshot mới.
+
+Mã máy (`machineId`):
+
+| Line | Máy |
+|---|---|
+| LINE_01 | `L01_PREFEED_01` `L01_BLOWER_01` `L01_AIRCONV_01` `L01_RINSER_01` `L01_FILLER_01` `L01_CAPPER_01` `L01_LABELER_01` `L01_CODER_01` `L01_CASEPACKER_01` |
+| LINE_02 | `L02_PREFEED_01` `L02_BLOWER_01` `L02_AIRCONV_01` `L02_RINSER_01` `L02_FILLER_01` `L02_CAPPER_01` `L02_LABELER_01` `L02_CODER_01` `L02_CASEPACKER_01` |
+| LINE_03 | `L03_CANDEPAL_01` `L03_CANRINSER_01` `L03_CANFILLER_01` `L03_SEAMER_01` `L03_CANCODER_01` `L03_CANINSPECT_01` `L03_CASEPACKER_01` |
+| SHARED | `CIP_SKID_01` |
+
+## Kiểm thử
+
+So sánh API với phép tính độc lập từ topic nguồn (dừng middleware để dữ liệu đứng yên khi so):
 
 ```bash
-# Luồng A: Kafka -> MinIO (raw Parquet). Chạy liên tục, trigger 1 phút (đã có service stream-raw-ingest):
-docker compose exec spark-master spark-submit /opt/spark-apps/kafka_to_minio.py
-#   --available-now : xử lý hết dữ liệu đang có rồi dừng;  --trigger "10 seconds"
-
-# Luồng C: MinIO -> PostgreSQL (production/quality/data quality metric), upsert idempotent
-docker compose exec spark-master spark-submit /opt/spark-apps/minio_to_postgres.py [--date 2026-11-11 [--hour 8]]
+docker compose stop middleware-sim && sleep 10
+docker compose exec -T state-api python - < scripts/verify_machine_state.py     # in PASS / FAIL
+docker compose start middleware-sim
 ```
 
-## Smoke test end-to-end
+Test WebSocket (nghe 30s, in độ trễ; nếu dừng middleware trong lúc chạy thì so trạng thái ghép từ patch với REST):
 
 ```bash
-./scripts/smoke_test.sh     # CẢNH BÁO: dừng streaming service, reset topic, bucket, checkpoint và các bảng metric
+docker compose exec -T state-api python - --duration 30 < scripts/ws_client.py
+docker compose exec -T state-api python - --machine L01_FILLER_01 --duration 20 --verbose < scripts/ws_client.py
 ```
 
-Script sinh event test (có chèn duplicate / missing / invalid / late), đẩy vào Kafka, chạy cả hai job,
-in bảng `data_quality_metric` rồi đối chiếu tổng sản lượng giữa Spark và một phép tính Python độc lập.
+## Vận hành
 
-## Cấu trúc
-
-```
-docker-compose.yml          Kafka, MinIO, PostgreSQL, Spark master + worker
-docker/spark/Dockerfile     apache/spark 3.5.5 + jar connector
-docker/kafka/create-topics.sh
-spark/conf/spark-defaults.conf   cấu hình S3A -> MinIO
-spark/apps/                 PySpark job (mount vào /opt/spark-apps)
-postgres/init/              DDL + seed master data
-scripts/                    generator event test, smoke test
+```bash
+docker compose logs -f stream-machine-state                # mỗi 30s in throughput, thời gian batch
+docker compose --profile telemetry stop                    # dừng (giữ dữ liệu)
+docker compose --profile telemetry down                    # xoá container (giữ volume)
+docker compose --profile telemetry down -v                 # xoá sạch cả dữ liệu
+./scripts/reset_machine_state.sh                           # chỉ reset 2 topic + checkpoint của luồng này
 ```
 
-## Ghi chú
-
-- Image `minio/minio` đã bị gỡ khỏi Docker Hub/quay.io nên dùng `alpine/minio` (build tự động từ source chính thức, tag cố định).
-- Tài nguyên: worker 6 core / 3 GB. raw ingest dùng 1 core, realtime 3 core, job batch tối đa 2 core.
-- Thêm worker: `docker compose up -d --scale spark-worker=2` (cần bỏ `container_name` và port của worker).
-- Xoá sạch dữ liệu: `docker compose down -v`.
+- Spark chết / restart: đọc tiếp từ checkpoint, không mất event; API vẫn trả trạng thái cuối trong lúc đó.
+- API restart: tự đọc lại topic compacted, vài giây là đủ trạng thái 26 máy.
+- Log chi tiết từng message của middleware: `MIDDLEWARE_LOG_LEVEL=INFO docker compose --profile telemetry up -d middleware-sim`
+  (mặc định `WARNING` vì log từng message rất tốn CPU).
+- Máy yếu / đang chạy nặng: batch Spark chậm lại và `ageSeconds` tăng; tắt bớt ứng dụng hoặc tăng CPU/RAM cho Docker.

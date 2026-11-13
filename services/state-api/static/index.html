@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Machine State Live</title>
+<style>
+  :root { --bg:#0f1419; --card:#182029; --line:#2a3542; --text:#e6edf3; --muted:#8b98a5;
+          --run:#2ea043; --start:#3b82f6; --stop:#d29922; --fault:#f85149; --maint:#a371f7; --off:#6e7681; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; background:var(--bg); color:var(--text); }
+  header { position:sticky; top:0; z-index:2; background:#0b0f13; border-bottom:1px solid var(--line);
+           padding:10px 16px; display:flex; flex-wrap:wrap; gap:10px 18px; align-items:center; }
+  h1 { font-size:16px; margin:0; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; background:var(--fault); margin-right:6px; }
+  .dot.on { background:var(--run); }
+  .stat { color:var(--muted); font-variant-numeric:tabular-nums; }
+  .stat b { color:var(--text); font-weight:600; }
+  select, button { background:var(--card); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:4px 8px; font:inherit; }
+  main { display:grid; grid-template-columns: 1fr minmax(320px, 420px); gap:16px; padding:16px; }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+  .line-title { margin:14px 0 8px; color:var(--muted); font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  .line-title:first-child { margin-top:0; }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap:10px; }
+  .card { background:var(--card); border:1px solid var(--line); border-left:4px solid var(--off); border-radius:8px;
+          padding:10px; cursor:pointer; transition: box-shadow .3s; }
+  .card.sel { outline:2px solid #58a6ff; }
+  .card.flash { box-shadow: 0 0 0 2px #58a6ff66; }
+  .card .top { display:flex; justify-content:space-between; gap:6px; align-items:baseline; }
+  .card .id { font-weight:600; font-size:13px; }
+  .card .type { color:var(--muted); font-size:11px; }
+  .badge { font-size:11px; font-weight:700; padding:1px 6px; border-radius:4px; color:#fff; background:var(--off); white-space:nowrap; }
+  .kv { display:grid; grid-template-columns: 1fr auto; gap:2px 8px; margin-top:8px; font-size:12px; font-variant-numeric:tabular-nums; }
+  .kv span:nth-child(odd) { color:var(--muted); }
+  .age { margin-top:6px; font-size:11px; color:var(--muted); }
+  .age.stale { color:var(--fault); }
+  .S-RUNNING{--c:var(--run)} .S-STARTING{--c:var(--start)} .S-STOPPED{--c:var(--stop)}
+  .S-FAULTED{--c:var(--fault)} .S-MAINTENANCE{--c:var(--maint)} .S-OFF{--c:var(--off)}
+  .card[class*="S-"] { border-left-color: var(--c); } .badge[class*="S-"] { background: var(--c); }
+  aside { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px; align-self:start;
+          position:sticky; top:64px; max-height:calc(100vh - 80px); overflow:auto; }
+  aside h2 { font-size:15px; margin:0 0 4px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums; }
+  th, td { text-align:left; padding:4px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:500; position:sticky; top:-12px; background:var(--card); }
+  td.v { font-weight:600; }
+  tr.bad td { color:var(--fault); }
+  @keyframes hl { from { background:#58a6ff55; } to { background:transparent; } }
+  .hl { animation: hl 1.2s ease-out; }
+  .muted { color:var(--muted); }
+  #log { font:11px ui-monospace, Menlo, monospace; white-space:pre-wrap; color:var(--muted); max-height:140px; overflow:auto; margin-top:10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Machine State Live</h1>
+  <span><span id="dot" class="dot"></span><span id="conn">đang kết nối…</span></span>
+  <label>Line <select id="line"><option value="">Tất cả</option><option>LINE_01</option><option>LINE_02</option><option>LINE_03</option><option>SHARED</option></select></label>
+  <button id="pause">Tạm dừng</button>
+  <span class="stat">patch <b id="nPatch">0</b></span>
+  <span class="stat">tag cập nhật/s <b id="rate">0</b></span>
+  <span class="stat">độ trễ (eventTime→nhận) <b id="lat">–</b></span>
+  <span class="stat">nhận lúc <b id="last">–</b></span>
+</header>
+<main>
+  <section id="lines"></section>
+  <aside id="detail"><p class="muted">Chọn một máy để xem toàn bộ tag cập nhật realtime.</p><div id="log"></div></aside>
+</main>
+<script>
+const STATE_ORDER = ["LINE_01", "LINE_02", "LINE_03", "SHARED"];
+const SHOW = [["CurrentSpeed","Tốc độ"],["TotalCounter","Tổng"],["GoodCounter","Đạt"],["DefectCounter","Lỗi"],["AlarmCode","Alarm"]];
+const machines = new Map();      // machineId -> {summary, tags}
+let ws, selected = null, paused = false, nPatch = 0, tagWindow = [], latWindow = [], retry = 0;
+
+const $ = id => document.getElementById(id);
+const fmt = v => v === null || v === undefined ? "null" : typeof v === "number" ? (Number.isInteger(v) ? v : v.toFixed(3)) : String(v);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function log(msg) { const el = $("log"); if (!el) return; el.textContent = new Date().toLocaleTimeString() + " " + msg + "\n" + el.textContent.slice(0, 3000); }
+
+function connect() {
+  const line = $("line").value;
+  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/machines${line ? "?lineId=" + line : ""}`;
+  ws = new WebSocket(url);
+  ws.onopen = () => { retry = 0; $("dot").className = "dot on"; $("conn").textContent = "đã kết nối"; log("open " + url); };
+  ws.onclose = () => {
+    $("dot").className = "dot"; const wait = Math.min(10, 1 + retry++);
+    $("conn").textContent = `mất kết nối, thử lại sau ${wait}s`; log("close"); setTimeout(connect, wait * 1000);
+  };
+  ws.onmessage = ev => onMessage(JSON.parse(ev.data));
+}
+
+function onMessage(msg) {
+  if (msg.type === "snapshot") {
+    machines.clear();
+    for (const m of msg.machines) { const {tags, ...s} = m; machines.set(m.machineId, {summary: s, tags}); }
+    log(`snapshot: ${msg.machines.length} máy, ready=${msg.ready}`);
+    renderAll();
+  } else if (msg.type === "patch") {
+    nPatch++;
+    const recv = Date.now();
+    const changed = [];
+    for (const m of msg.machines) {
+      const {tags, ...s} = m;
+      const cur = machines.get(m.machineId) || {summary: s, tags: {}};
+      cur.summary = s;
+      for (const [k, t] of Object.entries(tags)) {
+        const old = cur.tags[k];
+        if (old && old.eventTime > t.eventTime) continue;        // không lùi về bản cũ
+        cur.tags[k] = t;
+        tagWindow.push(recv);
+        latWindow.push(recv - Date.parse(t.eventTime));
+      }
+      machines.set(m.machineId, cur);
+      changed.push([m.machineId, Object.keys(tags)]);
+    }
+    $("nPatch").textContent = nPatch;
+    $("last").textContent = new Date().toLocaleTimeString();
+    if (!paused) for (const [id, keys] of changed) renderCard(id, true, keys);
+  } else if (msg.type === "heartbeat") {
+    log("heartbeat");
+  } else {
+    log(JSON.stringify(msg));
+  }
+}
+
+function cardHtml(m) {
+  const s = m.summary, st = s.state || "OFF";
+  const kv = SHOW.filter(([k]) => k in m.tags).map(([k, label]) => {
+    const t = m.tags[k]; return `<span>${label}</span><span>${fmt(t.value)}${t.unit ? " " + esc(t.unit) : ""}</span>`;
+  }).join("");
+  return `<div class="top"><span class="id">${esc(s.machineId)}</span><span class="badge S-${st}">${st}</span></div>
+          <div class="type">${esc(s.machineType || "")}</div><div class="kv">${kv}</div>
+          <div class="age" data-age="${esc(s.lastEventTime || "")}"></div>`;
+}
+
+function renderCard(id, flash, keys) {
+  const m = machines.get(id); if (!m) return;
+  let el = document.querySelector(`.card[data-id="${id}"]`);
+  if (!el) { renderAll(); return; }
+  el.className = `card S-${m.summary.state || "OFF"}${id === selected ? " sel" : ""}`;
+  el.innerHTML = cardHtml(m);
+  if (flash) { el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 300); }
+  if (id === selected) renderDetail(keys);
+  tickAges();
+}
+
+function renderAll() {
+  const byLine = {};
+  for (const m of machines.values()) (byLine[m.summary.lineId || "UNKNOWN"] ??= []).push(m);
+  const lines = Object.keys(byLine).sort((a, b) => (STATE_ORDER.indexOf(a) + 99) % 99 - (STATE_ORDER.indexOf(b) + 99) % 99 || a.localeCompare(b));
+  $("lines").innerHTML = lines.map(l => {
+    const counts = {}; byLine[l].forEach(m => counts[m.summary.state] = (counts[m.summary.state] || 0) + 1);
+    return `<div class="line-title">${l} · ${byLine[l].length} máy · ${Object.entries(counts).map(([k, v]) => `${k} ${v}`).join(", ")}</div>
+            <div class="grid">${byLine[l].sort((a, b) => a.summary.machineId.localeCompare(b.summary.machineId)).map(m =>
+              `<div class="card S-${m.summary.state || "OFF"}${m.summary.machineId === selected ? " sel" : ""}" data-id="${m.summary.machineId}">${cardHtml(m)}</div>`).join("")}</div>`;
+  }).join("") || `<p class="muted">Chưa có dữ liệu.</p>`;
+  if (selected) renderDetail([]);
+  tickAges();
+}
+
+function renderDetail(changedKeys) {
+  const m = machines.get(selected);
+  if (!m) { $("detail").innerHTML = `<p class="muted">Máy ${esc(selected)} không có trong bộ lọc hiện tại.</p><div id="log"></div>`; return; }
+  const logText = $("log") ? $("log").textContent : "";
+  const s = m.summary;
+  const rows = Object.entries(m.tags).sort(([a], [b]) => a.localeCompare(b)).map(([k, t]) =>
+    `<tr class="${t.isGood === false ? "bad" : ""}${changedKeys.includes(k) ? " hl" : ""}"><td>${esc(k)}</td>
+     <td class="v">${esc(fmt(t.value))}${t.stateName ? " (" + t.stateName + ")" : ""}</td><td>${esc(t.unit || "")}</td>
+     <td>${esc(t.statusCode || "")}</td><td>${esc((t.eventTime || "").slice(11, 23))}</td></tr>`).join("");
+  $("detail").innerHTML = `<h2>${esc(s.machineId)} <span class="badge S-${s.state || "OFF"}">${s.state || "?"}</span></h2>
+    <div class="muted">${esc(s.lineId)} · ${esc(s.processId)} · ${esc(s.machineType)} · ${esc(s.equipmentCode)}</div>
+    <div class="muted" style="margin:4px 0 8px">trạng thái từ ${esc((s.stateSince || "").slice(11, 19))} UTC · ${s.tagCount} tag · nguồn ${esc(s.sourceSystem)}</div>
+    <table><thead><tr><th>Tag</th><th>Giá trị</th><th>Đơn vị</th><th>Quality</th><th>eventTime (UTC)</th></tr></thead><tbody>${rows}</tbody></table>
+    <div id="log"></div>`;
+  $("log").textContent = logText;
+}
+
+function tickAges() {
+  const now = Date.now();
+  document.querySelectorAll(".age").forEach(el => {
+    const t = Date.parse(el.dataset.age); if (!t) { el.textContent = ""; return; }
+    const sec = Math.max(0, (now - t) / 1000);
+    el.textContent = `cập nhật ${sec < 60 ? sec.toFixed(0) + "s" : Math.floor(sec / 60) + " phút"} trước`;
+    el.classList.toggle("stale", sec > 60);
+  });
+}
+
+setInterval(() => {
+  const now = Date.now();
+  tagWindow = tagWindow.filter(t => now - t < 5000);
+  latWindow = latWindow.slice(-500);
+  $("rate").textContent = (tagWindow.length / 5).toFixed(1);
+  if (latWindow.length) { const s = [...latWindow].sort((a, b) => a - b); $("lat").textContent = `p50 ${(s[s.length >> 1] / 1000).toFixed(2)}s`; }
+  tickAges();
+}, 1000);
+
+$("lines").addEventListener("click", e => {
+  const c = e.target.closest(".card"); if (!c) return;
+  selected = c.dataset.id;
+  document.querySelectorAll(".card.sel").forEach(x => x.classList.remove("sel")); c.classList.add("sel");
+  renderDetail([]);
+});
+$("line").addEventListener("change", () => {
+  const line = $("line").value || null;
+  if (ws && ws.readyState === 1) ws.send(JSON.stringify({action: "subscribe", lineId: line}));
+});
+$("pause").addEventListener("click", () => {
+  paused = !paused; $("pause").textContent = paused ? "Tiếp tục" : "Tạm dừng"; if (!paused) renderAll();
+});
+connect();
+</script>
+</body>
+</html>
