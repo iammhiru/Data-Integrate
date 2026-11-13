@@ -33,6 +33,12 @@ export default defineConfig({
         ws: true,
         rewrite: (p) => p.replace(/^\/state-api/, ''),
       },
+      // `master-api` (FastAPI) — master data: dòng chạy, SKU, work order,
+      // kế hoạch sản lượng. Đọc từ PostgreSQL master (fallback JSON).
+      '/master-api': {
+        target: 'http://localhost:8001',
+        rewrite: (p) => p.replace(/^\/master-api/, ''),
+      },
     },
   },
 });

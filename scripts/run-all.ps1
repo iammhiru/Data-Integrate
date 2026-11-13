@@ -7,6 +7,8 @@
 #   Middleware -> Kafka `industrial.telemetry` -> Spark -> Kafka `machine-state` (compact)
 #              -> state-api (FastAPI :8000) -> WebSocket -> Frontend (Vite :5173)
 #
+# Master data (dong chay, SKU, work order, ke hoach) -> master-api (:8001) -> Frontend
+#
 # Kafka: cluster that 192.168.179.176:29092 (KAFKA_BROKERS trong .env)
 param(
     [switch]$RealKepware,
@@ -55,6 +57,10 @@ Write-Host "`n=== [2/4] state-api (:8000) ===" -ForegroundColor Yellow
 Start-Step "state-api" "run-state-api.ps1"
 Start-Sleep -Seconds 20
 
+Write-Host "`n=== [2b/4] master-api (:8001) — master data ===" -ForegroundColor Yellow
+Start-Step "master-api" "run-master-api.ps1"
+Start-Sleep -Seconds 10
+
 Write-Host "`n=== [3/4] Middleware ===" -ForegroundColor Yellow
 if ($RealKepware) {
     Start-Step "middleware" "run-middleware.ps1"
@@ -84,6 +90,12 @@ try {
     Write-Host "  state-api :8000  -> $h" -ForegroundColor Green
 } catch {
     Write-Host "  state-api :8000  -> CHUA SAN SANG ($($_.Exception.Message))" -ForegroundColor Red
+}
+try {
+    $m = (Invoke-WebRequest -Uri "http://127.0.0.1:8001/health" -UseBasicParsing -TimeoutSec 10).Content
+    Write-Host "  master-api :8001 -> $m" -ForegroundColor Green
+} catch {
+    Write-Host "  master-api :8001 -> CHUA SAN SANG ($($_.Exception.Message))" -ForegroundColor Red
 }
 Write-Host "  Frontend  :5173  -> http://127.0.0.1:5173/?source=live" -ForegroundColor Green
 Write-Host "  state-api :8000  -> http://127.0.0.1:8000/docs" -ForegroundColor Green

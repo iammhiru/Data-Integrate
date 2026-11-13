@@ -1,0 +1,686 @@
+{
+  "plant_id": "PLANT_01",
+  "shifts": [
+    {
+      "shift_id": "A",
+      "shift_name": "Ca A",
+      "start_time": "06:00",
+      "end_time": "14:00",
+      "planned_minutes": 480,
+      "planned_break_minutes": 30
+    },
+    {
+      "shift_id": "B",
+      "shift_name": "Ca B",
+      "start_time": "14:00",
+      "end_time": "22:00",
+      "planned_minutes": 480,
+      "planned_break_minutes": 30
+    },
+    {
+      "shift_id": "C",
+      "shift_name": "Ca C",
+      "start_time": "22:00",
+      "end_time": "06:00",
+      "planned_minutes": 480,
+      "planned_break_minutes": 30
+    }
+  ],
+  "lines": [
+    {
+      "line_id": "LINE_01",
+      "display_name": "Chai PET — có ga",
+      "channel": "LINE_01",
+      "reference_process": "FILLING",
+      "product_id": "PET-500-COKE",
+      "product_name": "Nước có ga 500ml",
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_02",
+      "display_name": "Chai PET — không ga",
+      "channel": "LINE_02",
+      "reference_process": "FILLING",
+      "product_id": "PET-500-WATER",
+      "product_name": "Nước khoáng 500ml",
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_03",
+      "display_name": "Lon nhôm",
+      "channel": "LINE_03",
+      "reference_process": "FILLING",
+      "product_id": "CAN-330-SUGAR",
+      "product_name": "Nước giải khát lon 330ml",
+      "unit": "cans"
+    }
+  ],
+  "products": [
+    {
+      "product_id": "PET-500-COKE",
+      "product_name": "Nước có ga 500ml",
+      "line_id": "LINE_01",
+      "ideal_cycle_time_sec": 0.4234,
+      "design_speed": 141.694
+    },
+    {
+      "product_id": "PET-500-WATER",
+      "product_name": "Nước khoáng 500ml",
+      "line_id": "LINE_02",
+      "ideal_cycle_time_sec": 0.5047,
+      "design_speed": 118.872
+    },
+    {
+      "product_id": "CAN-330-SUGAR",
+      "product_name": "Nước giải khát lon 330ml",
+      "line_id": "LINE_03",
+      "ideal_cycle_time_sec": 0.5877,
+      "design_speed": 102.085
+    }
+  ],
+  "machines": [
+    {
+      "machine_id": "L01_PREFEED_01",
+      "machine_name": "L01_PREFEED_01",
+      "machine_type": "PREFORM_FEEDER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "PREFORM_FEEDING",
+      "equipment_code": "PREF-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 132.731,
+      "design_speed_unit": "preform/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_BLOWER_01",
+      "machine_name": "L01_BLOWER_01",
+      "machine_type": "STRETCH_BLOW_MOULDER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "BLOW_MOULDING",
+      "equipment_code": "BLOW-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 147.8,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_AIRCONV_01",
+      "machine_name": "L01_AIRCONV_01",
+      "machine_type": "AIR_CONVEYOR",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "BOTTLE_CONVEYING",
+      "equipment_code": "ACONV-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 111.11,
+      "design_speed_unit": "m/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_RINSER_01",
+      "machine_name": "L01_RINSER_01",
+      "machine_type": "BOTTLE_RINSER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "RINSING",
+      "equipment_code": "RINSE-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 83.0,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_FILLER_01",
+      "machine_name": "L01_FILLER_01",
+      "machine_type": "CARBONATED_FILLER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "FILLING",
+      "equipment_code": "FILL-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 141.694,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_CAPPER_01",
+      "machine_name": "L01_CAPPER_01",
+      "machine_type": "SCREW_CAPPER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "CAPPING",
+      "equipment_code": "CAPP-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 104.178,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_LABELER_01",
+      "machine_name": "L01_LABELER_01",
+      "machine_type": "BOTTLE_LABELER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "LABELLING",
+      "equipment_code": "LABL-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 87.738,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_CODER_01",
+      "machine_name": "L01_CODER_01",
+      "machine_type": "DATE_CODER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "CODING",
+      "equipment_code": "CODE-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 136.083,
+      "design_speed_unit": "pcs/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L01_CASEPACKER_01",
+      "machine_name": "L01_CASEPACKER_01",
+      "machine_type": "CASE_PACKER",
+      "line_id": "LINE_01",
+      "channel": "LINE_01",
+      "process_id": "CASE_PACKING",
+      "equipment_code": "CASE-L01-01",
+      "location": "PLANT_01",
+      "design_speed": 112.079,
+      "design_speed_unit": "cases/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_PREFEED_01",
+      "machine_name": "L02_PREFEED_01",
+      "machine_type": "PREFORM_FEEDER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "PREFORM_FEEDING",
+      "equipment_code": "PREF-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 93.943,
+      "design_speed_unit": "preform/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_BLOWER_01",
+      "machine_name": "L02_BLOWER_01",
+      "machine_type": "STRETCH_BLOW_MOULDER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "BLOW_MOULDING",
+      "equipment_code": "BLOW-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 89.905,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_AIRCONV_01",
+      "machine_name": "L02_AIRCONV_01",
+      "machine_type": "AIR_CONVEYOR",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "BOTTLE_CONVEYING",
+      "equipment_code": "ACONV-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 113.435,
+      "design_speed_unit": "m/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_RINSER_01",
+      "machine_name": "L02_RINSER_01",
+      "machine_type": "BOTTLE_RINSER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "RINSING",
+      "equipment_code": "RINSE-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 85.665,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_FILLER_01",
+      "machine_name": "L02_FILLER_01",
+      "machine_type": "STILL_FILLER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "FILLING",
+      "equipment_code": "FILL-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 118.872,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_CAPPER_01",
+      "machine_name": "L02_CAPPER_01",
+      "machine_type": "SCREW_CAPPER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "CAPPING",
+      "equipment_code": "CAPP-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 100.128,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_LABELER_01",
+      "machine_name": "L02_LABELER_01",
+      "machine_type": "BOTTLE_LABELER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "LABELLING",
+      "equipment_code": "LABL-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 85.293,
+      "design_speed_unit": "bottles/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_CODER_01",
+      "machine_name": "L02_CODER_01",
+      "machine_type": "DATE_CODER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "CODING",
+      "equipment_code": "CODE-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 122.879,
+      "design_speed_unit": "pcs/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L02_CASEPACKER_01",
+      "machine_name": "L02_CASEPACKER_01",
+      "machine_type": "CASE_PACKER",
+      "line_id": "LINE_02",
+      "channel": "LINE_02",
+      "process_id": "CASE_PACKING",
+      "equipment_code": "CASE-L02-01",
+      "location": "PLANT_01",
+      "design_speed": 88.191,
+      "design_speed_unit": "cases/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_CANDEPAL_01",
+      "machine_name": "L03_CANDEPAL_01",
+      "machine_type": "CAN_DEPALLETIZER",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "CAN_DEPALLETTIZING",
+      "equipment_code": "DEPL-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 124.492,
+      "design_speed_unit": "cans/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_CANRINSER_01",
+      "machine_name": "L03_CANRINSER_01",
+      "machine_type": "CAN_RINSER",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "RINSING",
+      "equipment_code": "RINSE-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 148.43,
+      "design_speed_unit": "cans/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_CANFILLER_01",
+      "machine_name": "L03_CANFILLER_01",
+      "machine_type": "CAN_FILLER",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "FILLING",
+      "equipment_code": "FILL-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 102.085,
+      "design_speed_unit": "cans/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_SEAMER_01",
+      "machine_name": "L03_SEAMER_01",
+      "machine_type": "CAN_SEAMER",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "SEAMING",
+      "equipment_code": "SEAM-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 123.88,
+      "design_speed_unit": "cans/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_CANCODER_01",
+      "machine_name": "L03_CANCODER_01",
+      "machine_type": "DATE_CODER",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "CODING",
+      "equipment_code": "CODE-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 112.949,
+      "design_speed_unit": "pcs/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_CANINSPECT_01",
+      "machine_name": "L03_CANINSPECT_01",
+      "machine_type": "CAN_INSPECTION",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "INSPECTION",
+      "equipment_code": "INSP-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 138.507,
+      "design_speed_unit": "cans/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "L03_CASEPACKER_01",
+      "machine_name": "L03_CASEPACKER_01",
+      "machine_type": "CASE_PACKER",
+      "line_id": "LINE_03",
+      "channel": "LINE_03",
+      "process_id": "CASE_PACKING",
+      "equipment_code": "CASE-L03-01",
+      "location": "PLANT_01",
+      "design_speed": 109.75,
+      "design_speed_unit": "cases/min",
+      "is_producer": true
+    },
+    {
+      "machine_id": "CIP_SKID_01",
+      "machine_name": "CIP_SKID_01",
+      "machine_type": "CIP_SKID",
+      "line_id": "SHARED",
+      "channel": "SHARED",
+      "process_id": "CIP",
+      "equipment_code": "CIP-SHARED-01",
+      "location": "PLANT_01",
+      "design_speed": null,
+      "design_speed_unit": null,
+      "is_producer": false
+    }
+  ],
+  "work_orders": [
+    {
+      "wo_id": "WO-2026-11-13-LINE_01-A",
+      "wo_code": "WO-2611-1301-A",
+      "line_id": "LINE_01",
+      "product_id": "PET-500-COKE",
+      "planned_qty": 57400,
+      "shift_id": "A",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_01-B",
+      "wo_code": "WO-2611-1301-B",
+      "line_id": "LINE_01",
+      "product_id": "PET-500-COKE",
+      "planned_qty": 57400,
+      "shift_id": "B",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_01-C",
+      "wo_code": "WO-2611-1301-C",
+      "line_id": "LINE_01",
+      "product_id": "PET-500-COKE",
+      "planned_qty": 57400,
+      "shift_id": "C",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_02-A",
+      "wo_code": "WO-2611-1302-A",
+      "line_id": "LINE_02",
+      "product_id": "PET-500-WATER",
+      "planned_qty": 52600,
+      "shift_id": "A",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_02-B",
+      "wo_code": "WO-2611-1302-B",
+      "line_id": "LINE_02",
+      "product_id": "PET-500-WATER",
+      "planned_qty": 52600,
+      "shift_id": "B",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_02-C",
+      "wo_code": "WO-2611-1302-C",
+      "line_id": "LINE_02",
+      "product_id": "PET-500-WATER",
+      "planned_qty": 52600,
+      "shift_id": "C",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_03-A",
+      "wo_code": "WO-2611-1303-A",
+      "line_id": "LINE_03",
+      "product_id": "CAN-330-SUGAR",
+      "planned_qty": 44000,
+      "shift_id": "A",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_03-B",
+      "wo_code": "WO-2611-1303-B",
+      "line_id": "LINE_03",
+      "product_id": "CAN-330-SUGAR",
+      "planned_qty": 44000,
+      "shift_id": "B",
+      "status": "RUNNING"
+    },
+    {
+      "wo_id": "WO-2026-11-13-LINE_03-C",
+      "wo_code": "WO-2611-1303-C",
+      "line_id": "LINE_03",
+      "product_id": "CAN-330-SUGAR",
+      "planned_qty": 44000,
+      "shift_id": "C",
+      "status": "RUNNING"
+    }
+  ],
+  "production_plans": [
+    {
+      "line_id": "LINE_01",
+      "product_id": "PET-500-COKE",
+      "shift_id": "A",
+      "planned_qty": 57400,
+      "theoretical_qty": 63769,
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_01",
+      "product_id": "PET-500-COKE",
+      "shift_id": "B",
+      "planned_qty": 57400,
+      "theoretical_qty": 63769,
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_01",
+      "product_id": "PET-500-COKE",
+      "shift_id": "C",
+      "planned_qty": 57400,
+      "theoretical_qty": 63769,
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_02",
+      "product_id": "PET-500-WATER",
+      "shift_id": "A",
+      "planned_qty": 52600,
+      "theoretical_qty": 53497,
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_02",
+      "product_id": "PET-500-WATER",
+      "shift_id": "B",
+      "planned_qty": 52600,
+      "theoretical_qty": 53497,
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_02",
+      "product_id": "PET-500-WATER",
+      "shift_id": "C",
+      "planned_qty": 52600,
+      "theoretical_qty": 53497,
+      "unit": "bottles"
+    },
+    {
+      "line_id": "LINE_03",
+      "product_id": "CAN-330-SUGAR",
+      "shift_id": "A",
+      "planned_qty": 44000,
+      "theoretical_qty": 45942,
+      "unit": "cans"
+    },
+    {
+      "line_id": "LINE_03",
+      "product_id": "CAN-330-SUGAR",
+      "shift_id": "B",
+      "planned_qty": 44000,
+      "theoretical_qty": 45942,
+      "unit": "cans"
+    },
+    {
+      "line_id": "LINE_03",
+      "product_id": "CAN-330-SUGAR",
+      "shift_id": "C",
+      "planned_qty": 44000,
+      "theoretical_qty": 45942,
+      "unit": "cans"
+    }
+  ],
+  "id_mapping": {
+    "kepware": [
+      {
+        "source_id": "PREF-L01-01",
+        "machine_id": "L01_PREFEED_01"
+      },
+      {
+        "source_id": "BLOW-L01-01",
+        "machine_id": "L01_BLOWER_01"
+      },
+      {
+        "source_id": "ACONV-L01-01",
+        "machine_id": "L01_AIRCONV_01"
+      },
+      {
+        "source_id": "RINSE-L01-01",
+        "machine_id": "L01_RINSER_01"
+      },
+      {
+        "source_id": "FILL-L01-01",
+        "machine_id": "L01_FILLER_01"
+      },
+      {
+        "source_id": "CAPP-L01-01",
+        "machine_id": "L01_CAPPER_01"
+      },
+      {
+        "source_id": "LABL-L01-01",
+        "machine_id": "L01_LABELER_01"
+      },
+      {
+        "source_id": "CODE-L01-01",
+        "machine_id": "L01_CODER_01"
+      },
+      {
+        "source_id": "CASE-L01-01",
+        "machine_id": "L01_CASEPACKER_01"
+      },
+      {
+        "source_id": "PREF-L02-01",
+        "machine_id": "L02_PREFEED_01"
+      },
+      {
+        "source_id": "BLOW-L02-01",
+        "machine_id": "L02_BLOWER_01"
+      },
+      {
+        "source_id": "ACONV-L02-01",
+        "machine_id": "L02_AIRCONV_01"
+      },
+      {
+        "source_id": "RINSE-L02-01",
+        "machine_id": "L02_RINSER_01"
+      },
+      {
+        "source_id": "FILL-L02-01",
+        "machine_id": "L02_FILLER_01"
+      },
+      {
+        "source_id": "CAPP-L02-01",
+        "machine_id": "L02_CAPPER_01"
+      },
+      {
+        "source_id": "LABL-L02-01",
+        "machine_id": "L02_LABELER_01"
+      },
+      {
+        "source_id": "CODE-L02-01",
+        "machine_id": "L02_CODER_01"
+      },
+      {
+        "source_id": "CASE-L02-01",
+        "machine_id": "L02_CASEPACKER_01"
+      },
+      {
+        "source_id": "DEPL-L03-01",
+        "machine_id": "L03_CANDEPAL_01"
+      },
+      {
+        "source_id": "RINSE-L03-01",
+        "machine_id": "L03_CANRINSER_01"
+      },
+      {
+        "source_id": "FILL-L03-01",
+        "machine_id": "L03_CANFILLER_01"
+      },
+      {
+        "source_id": "SEAM-L03-01",
+        "machine_id": "L03_SEAMER_01"
+      },
+      {
+        "source_id": "CODE-L03-01",
+        "machine_id": "L03_CANCODER_01"
+      },
+      {
+        "source_id": "INSP-L03-01",
+        "machine_id": "L03_CANINSPECT_01"
+      },
+      {
+        "source_id": "CASE-L03-01",
+        "machine_id": "L03_CASEPACKER_01"
+      },
+      {
+        "source_id": "CIP-SHARED-01",
+        "machine_id": "CIP_SKID_01"
+      }
+    ]
+  }
+}

@@ -25,16 +25,26 @@ import {
 } from "./domain/quality";
 import { computeOee, yieldRate, availabilityOf, performanceOf, idealCycleFromDesignSpeed } from "./domain/oee";
 import { shiftOf } from "./domain/shift";
+import type { MasterData, MasterLine } from "./master-data";
 
 export type LineMeta = {
   lineId: string;
-  /** Tên tiếng Việt — sẽ lấy từ master data PG sau này. */
+  /** Tên tiếng Việt — nguồn: master data (master-api / PG). */
   displayName: string;
-  /** SKU đang chạy — nguồn: PG master. Hiện mock để review layout. */
+  /** SKU đang chạy — nguồn: master data. */
   sku: string | null;
   productName: string | null;
-  /** Kế hoạch sản lượng ca — nguồn: PG master. */
+  /** Kế hoạch sản lượng ca — nguồn: master data. */
   plannedQty: number | null;
+  /**
+   * Chu kỳ lý tưởng (giây/sản phẩm) — nguồn: master data (SKU).
+   * Null = chưa có → Performance không tính được, hiển thị "—".
+   */
+  idealCycleTimeSec: number | null;
+  /** Work order đang chạy — nguồn: master data. */
+  workOrder: { woId: string; woCode: string; plannedQty: number | null } | null;
+  /** Đơn vị sản phẩm (pcs / bottles / cans). */
+  unit: string | null;
   shift: string;
 };
 
@@ -73,42 +83,49 @@ export const SHARED_META = {
   sku: null as string | null,
   productName: null as string | null,
   plannedQty: null as number | null,
+  idealCycleTimeSec: null as number | null,
+  workOrder: null as LineMeta["workOrder"],
+  unit: null as string | null,
   shift: "Ca hiện tại",
 };
 
 /**
- * Kế hoạch sản lượng theo ca (pcs) — nguồn thật: bảng `production_plan` trong PG.
+ * Master data theo dòng chạy — nguồn: `master-api` (FastAPI :8001), đọc từ
+ * PostgreSQL master (hoặc `config/master_data.json` nếu chưa có PG).
  *
- * Giá trị mock được chọn theo công suất thiết kế × thời lượng ca:
- *   LINE_01/02: 120 chai/ph × 480 ph = 57.600 → kế hoạch ~52.000 (OEE mục tiêu 90%)
- *   LINE_03:    115 lon/ph  × 480 ph = 55.200 → kế hoạch ~45.000
+ * ⚠ KHÔNG hard-code ở đây nữa (Phase 1, 13/11/2026): trước đây `LINE_META`
+ *   chứa cứng SKU / tên dòng / kế hoạch → sai nguồn sự thật và không có
+ *   Ideal Cycle Time (Performance tính được nhờ DesignSpeed tạm thời).
+ *   Nay UI chỉ đọc; dữ liệu do `tools/gen_master_data.py` sinh từ
+ *   `catalog.json` của đồng đội.
  *
- * ⚠ `shift` được gán ĐỘNG khi dựng store (xem buildStore) — không ghim "Ca A",
- *   vì ca hiện tại phụ thuộc đồng hồ nhà máy.
+ * Nếu `master-api` không chạy → `master-data.ts` trả fallback (giống hệt
+ * giá trị hard-code cũ) → app vẫn chạy độc lập.
  */
-const LINE_META: Record<string, Omit<LineMeta, "shift">> = {
-  LINE_01: {
-    lineId: "LINE_01",
-    displayName: "Chai PET — có ga",
-    sku: "PET-500-COKE",
-    productName: "Nước có ga 500ml",
-    plannedQty: 52000,
-  },
-  LINE_02: {
-    lineId: "LINE_02",
-    displayName: "Chai PET — không ga",
-    sku: "PET-500-WATER",
-    productName: "Nước khoáng 500ml",
-    plannedQty: 48000,
-  },
-  LINE_03: {
-    lineId: "LINE_03",
-    displayName: "Lon nhôm",
-    sku: "CAN-330-SUGAR",
-    productName: "Nước giải khát lon 330ml",
-    plannedQty: 45000,
-  },
-};
+function lineMetaFromMaster(
+  master: MasterData | null,
+  lineId: string,
+  shiftLabelText: string,
+): LineMeta {
+  const m: MasterLine | undefined = master?.lines.find((l) => l.lineId === lineId);
+  return {
+    lineId,
+    displayName: m?.displayName ?? lineId,
+    sku: m?.sku ?? null,
+    productName: m?.productName ?? null,
+    plannedQty: m?.plannedQty ?? null,
+    idealCycleTimeSec: m?.idealCycleTimeSec ?? null,
+    workOrder: m?.workOrder
+      ? {
+          woId: m.workOrder.woId,
+          woCode: m.workOrder.woCode,
+          plannedQty: m.workOrder.plannedQty,
+        }
+      : null,
+    unit: m?.unit ?? null,
+    shift: shiftLabelText,
+  };
+}
 
 export type TelemetryStore = {
   reading: MockReading;
@@ -119,6 +136,8 @@ export type TelemetryStore = {
   byId: (id: string) => MachineStateView | undefined;
   /** Nguồn dữ liệu hiện tại — UI dùng để đổi badge MOCK/LIVE. */
   source: TelemetrySource;
+  /** Master data đang dùng (null = chưa tải / fallback). */
+  master: MasterData | null;
 };
 
 function machineView(
@@ -186,6 +205,7 @@ function computeLineOee(
   nowMs: number,
   source: TelemetrySource,
   reading: MockReading,
+  masterLine: MasterLine | undefined,
 ) {
   // Bộ đếm trong cửa sổ quan sát của từng máy.
   const counters = new Map(
@@ -200,8 +220,14 @@ function computeLineOee(
 
   // Máy tham chiếu = công đoạn CHIẾT (nơi ra sản phẩm chính, đơn vị pcs).
   // Không lấy "máy đầu tiên" vì máy đầu có thể đếm preform/nắp — đơn vị khác.
+  //
+  // ⚠ Phase 1: công đoạn chiết lấy từ MASTER DATA (`line.reference_process`),
+  //   không ghim cứng "FILLING" — sau này line làm lon/bao có thể khác.
+  const refProcess = masterLine?.referenceProcess ?? "FILLING";
   const ref =
-    producers.find((m) => m.def.processId === "FILLING") ?? producers[0];
+    producers.find((m) => m.def.processId === refProcess) ??
+    producers.find((m) => m.def.processId === "FILLING") ??
+    producers[0];
 
   const refCounters = ref ? counters.get(ref.def.machineId) : undefined;
   const total = refCounters?.total ?? 0;
@@ -223,15 +249,17 @@ function computeLineOee(
   const availability = availabilityOf(runTimeSec, plannedSec, machines.length);
 
   // ── Performance ──────────────────────────────────────────────────────
-  // Ideal Cycle Time suy ra từ DesignSpeed của máy tham chiếu (nguồn PG master
-  // khi tích hợp thật: production_run.idealCycleTime).
+  // Ideal Cycle Time: ưu tiên MASTER DATA (`product.ideal_cycle_time_sec` —
+  // nguồn sự thật theo SKU). Nếu chưa có master → suy ra tạm từ DesignSpeed
+  // của máy tham chiếu (đơn vị pcs/min → giây/pcs).
   //
   // RunTime của MÁY THAM CHIẾU (máy công đoạn chiết) mới là mẫu số — vì
   // Performance đo 1 máy, không đo cả line.
   const refRunTimeSec = ref
     ? source.runTimeSecOf(ref.def.machineId, ref.status, nowMs)
     : 0;
-  const idealCycleSec = idealCycleFromDesignSpeed(ref?.speed.design ?? null);
+  const idealCycleSec =
+    masterLine?.idealCycleTimeSec ?? idealCycleFromDesignSpeed(ref?.speed.design ?? null);
   const performance =
     performanceOf(idealCycleSec, total, refRunTimeSec) ?? 0;
 
@@ -243,17 +271,33 @@ function computeLineOee(
   };
 }
 
-export function buildStore(source: TelemetrySource): TelemetryStore {
+export function buildStore(
+  source: TelemetrySource,
+  master: MasterData | null = null,
+): TelemetryStore {
   const reading = source.read();
   const nowMs = Date.now();
   const machines = MACHINES.map((m) => machineView(m, reading, nowMs, source));
   const byIdMap = new Map(machines.map((m) => [m.def.machineId, m]));
 
-  const lineIds = ["LINE_01", "LINE_02", "LINE_03"];
+  // Danh sách dòng chạy: ưu tiên master data (thứ tự do master quyết định),
+  // fallback về 3 dòng cố định nếu master chưa có.
+  const lineIds =
+    master && master.lines.length
+      ? master.lines.map((l) => l.lineId)
+      : ["LINE_01", "LINE_02", "LINE_03"];
+
   const lines: LineView[] = lineIds.map((lineId) => {
     const ms = machines.filter((m) => m.def.lineId === lineId);
-    const { oee, output } = computeLineOee(ms, nowMs, source, reading);
-    const meta: LineMeta = { ...LINE_META[lineId], shift: shiftOf().label };
+    const masterLine = master?.lines.find((l) => l.lineId === lineId);
+    const { oee, output } = computeLineOee(
+      ms,
+      nowMs,
+      source,
+      reading,
+      masterLine,
+    );
+    const meta: LineMeta = lineMetaFromMaster(master, lineId, shiftOf().label);
     return {
       meta,
       machines: ms,
@@ -276,6 +320,7 @@ export function buildStore(source: TelemetrySource): TelemetryStore {
     machines,
     byId: (id) => byIdMap.get(id),
     source,
+    master,
   };
 }
 

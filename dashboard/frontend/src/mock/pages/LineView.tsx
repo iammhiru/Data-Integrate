@@ -114,6 +114,15 @@ export function LineView({
           </h1>
           <p className="page-sub">
             {meta.productName ?? "—"} · SKU {meta.sku ?? "—"} · {shiftLabel()}
+            {/* Work order đang chạy — nguồn: master data (master-api). */}
+            {meta.workOrder && (
+              <>
+                {" · "}
+                <span title={`Kế hoạch: ${meta.workOrder.plannedQty ?? "—"}`}>
+                  WO {meta.workOrder.woCode}
+                </span>
+              </>
+            )}
           </p>
         </div>
         <div className="head-right">

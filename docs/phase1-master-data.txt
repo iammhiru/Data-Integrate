@@ -1,0 +1,169 @@
+# ============================================================================
+#  PHASE 1 — MASTER DATA & POSTGRESQL
+#  Ngày: 13/11/2026
+#  Mục tiêu: bổ sung đầy đủ MASTER DATA để tính OEE theo đúng
+#             docs/architecture.txt §6, và chuẩn hoá nguồn dữ liệu chuẩn
+#             (dòng chạy, SKU, work order, kế hoạch sản lượng) cho toàn hệ.
+# ============================================================================
+
+ 1. VÌ SAO CẦN PHASE 1
+-------------------------------------------------------------------------------
+ Công thức OEE (§6) cần 4 nhóm dữ liệu mà hệ hiện tại CHƯA CÓ:
+
+   Availability = Run Time / Planned Production Time
+       → cần `shift` (planned_minutes − planned_break_minutes)        ✅ đã có
+   Performance  = (Ideal Cycle Time × Total Count) / Run Time
+       → cần Ideal Cycle Time THEO SKU                               ❌ mới có
+       → cần Total Count THEO WORK ORDER (bộ đếm máy là tích luỹ)    ❌ mới có
+   Quality      = Good Count / Total Count
+       → cần cùng bộ đếm trên                                        ❌ mới có
+
+ Ngoài ra UI đang hard-code SKU / tên dòng / kế hoạch trong
+ `dashboard/frontend/src/mock/store.ts` — sai nguồn sự thật, và mỗi lần
+ đổi SKU phải sửa code.
+
+ -------------------------------------------------------------------------------
+ 2. KIẾN TRÚC MASTER DATA (sau Phase 1)
+-------------------------------------------------------------------------------
+
+   IndustrialTelemetry.Middleware/metadata/catalog.json   (đồng đội đẩy lên)
+                    │  26 máy: machineId, equipmentCode, line, process, tags
+                    ▼
+   tools/gen_master_data.py  ──(+ config/design_speed.json)──►  config/master_data.json
+                    │                                              │  (nguồn JSON)
+                    │                                              ▼
+                    └──► postgres/init/02_seed_master_data.sql ──► PostgreSQL (master)
+                                                                        │
+                                                     MASTER_DB_URL ────┤
+                                                                        ▼
+                                                            services/master-api (:8001)
+                                                                        │
+                                                                        ▼
+                                                        Frontend (Vite :5173) → /master-api/*
+
+   ⚠ `master-api` đọc PostgreSQL nếu `MASTER_DB_URL` được đặt; nếu không
+     (hoặc PG không kết nối được) → tự động fallback sang `config/master_data.json`
+     → hệ vẫn chạy được khi chưa có PostgreSQL.
+
+ -------------------------------------------------------------------------------
+ 3. THAY ĐỔI CỤ THỂ
+-------------------------------------------------------------------------------
+ 3.1 `postgres/init/01_schema.sql`
+     · `machine_id` VARCHAR(16) → VARCHAR(32)  (machineId thật tới 18 ký tự:
+       `L03_CANINSPECT_01`, `CIP_SKID_01` …). Sửa cho MỌI bảng có cột này.
+     · + bảng `line`          — dòng chạy + công đoạn CHIẾT + SKU.
+     · + bảng `work_order`    — đơn hàng sản xuất (WO): line, SKU, ca, kế hoạch,
+                                trạng thái, thời gian thực tế.
+     · + bảng `counter_baseline` — MỐC BỘ ĐẾM theo work order.
+     · + bảng `production_plan` — kế hoạch sản lượng theo line + ca + ngày.
+
+ 3.2 `postgres/init/02_seed_master_data.sql`  (SINH TỰ ĐỘNG)
+     · Xoá sạch seed giả (100 máy `M001..M100`, 5 sản phẩm `P01..P05`).
+     · Seed 26 máy thật lấy từ `catalog.json` (kèm `ideal_speed` = DesignSpeed
+       quan sát được từ `state-api`).
+     · Seed 3 SKU với `ideal_cycle_time_sec` suy ra từ DesignSpeed của máy
+       tham chiếu (công đoạn CHIẾT = FILLING).
+     · Seed 3 dòng chạy, 3 ca, 9 work order (3 line × 3 ca), 9 kế hoạch.
+
+ 3.3 `tools/gen_master_data.py`  (MỚI)
+     Sinh `config/master_data.json` từ:
+       · `catalog.json` (đồng đội) — danh sách máy
+       · `config/design_speed.json` — DesignSpeed thực tế (snapshot từ state-api)
+       · Khai báo nghiệp vụ (SKU, ca, work order) — TÁCH riêng để sau này
+         nhập từ ERP/MES chỉ sửa 1 chỗ.
+     Chạy: `python tools/gen_master_data.py`
+
+ 3.4 `tools/gen_seed_sql.py`  (MỚI)
+     Sinh `postgres/init/02_seed_master_data.sql` từ `config/master_data.json`
+     → SQL luôn KHỚP với JSON, không bao giờ lệch nhau.
+     Chạy: `python tools/gen_seed_sql.py`
+
+ 3.5 `services/master-api/`  (MỚI — FastAPI :8001)
+     GET /health
+     GET /api/master          toàn bộ master data
+     GET /api/lines           dòng chạy + SKU + ICT + kế hoạch + WO đang chạy
+     GET /api/lines/{id}      chi tiết 1 dòng chạy + máy
+     GET /api/products        SKU
+     GET /api/work-orders     danh sách WO (lọc theo lineId / status)
+     GET /api/shifts          ca sản xuất
+     GET /api/machines        danh sách máy + master của máy
+
+ 3.6 Frontend
+     · MỚI `src/mock/master-data.ts` — tải master data từ `/master-api/api/lines`,
+       có FALLBACK giống hệt giá trị hard-code cũ (app vẫn chạy khi không có
+       master-api).
+     · `store.ts` — bỏ `LINE_META` hard-code; `buildStore(source, master)`;
+       Performance dùng `idealCycleTimeSec` từ master (fallback DesignSpeed);
+       công đoạn chiết đọc từ `line.reference_process` thay vì ghim "FILLING".
+     · `App.tsx` — load master 1 lần lúc mount.
+     · `LineView.tsx` — hiển thị mã work order đang chạy.
+     · `vite.config.ts` — proxy `/master-api` → `localhost:8001`.
+
+ 3.7 Scripts
+     · MỚI `scripts/run-master-api.ps1`
+     · `scripts/run-all.ps1` — thêm bước `[2b/4] master-api (:8001)`.
+
+ -------------------------------------------------------------------------------
+ 4. DỮ LIỆU THỰC TẾ ĐÃ DÙNG
+-------------------------------------------------------------------------------
+ 26 máy (catalog.json) — DesignSpeed đọc từ `state-api` lúc 13/11/2026:
+
+   LINE_01 (Chai PET có ga)        LINE_02 (Chai PET không ga)   LINE_03 (Lon nhôm)
+     L01_PREFEED_01  132.731         L02_PREFEED_01  93.943       L03_CANDEPAL_01  124.492
+     L01_BLOWER_01   147.800         L02_BLOWER_01   89.905       L03_CANRINSER_01 148.430
+     L01_AIRCONV_01  111.110         L02_AIRCONV_01 113.435       L03_CANFILLER_01 102.085
+     L01_RINSER_01    83.000         L02_RINSER_01   85.665       L03_SEAMER_01    123.880
+     L01_FILLER_01   141.694 ★       L02_FILLER_01  118.872 ★     L03_CANCODER_01  112.949
+     L01_CAPPER_01   104.178         L02_CAPPER_01  100.128       L03_CANINSPECT_01 138.507
+     L01_LABELER_01   87.738         L02_LABELER_01  85.293       L03_CASEPACKER_01 109.750
+     L01_CODER_01    136.083         L02_CODER_01   122.879
+     L01_CASEPACKER_01 112.079       L02_CASEPACKER_01 88.191
+                                    CIP_SKID_01 (dùng chung, không có DesignSpeed)
+
+   ★ = máy tham chiếu (công đoạn CHIẾT) → nguồn của Ideal Cycle Time:
+       PET-500-COKE   60 / 141.694 = 0.4234 s/pcs   (≈ 141.7 bottles/min)
+       PET-500-WATER  60 / 118.872 = 0.5047 s/pcs   (≈ 118.9 bottles/min)
+       CAN-330-SUGAR  60 / 102.085 = 0.5877 s/pcs   (≈ 102.1 cans/min)
+
+ -------------------------------------------------------------------------------
+ 5. COUNTER BASELINE — VÌ SAO CẦN (phần cốt lõi cho OEE)
+-------------------------------------------------------------------------------
+ Bộ đếm máy (`TotalCounter`, `GoodCounter`, `DefectCounter`) là BỘ ĐẾM TÍCH LUỸ
+ từ lần bật nguồn máy — KHÔNG reset theo ca, cũng không reset theo work order.
+
+   ⇒ "Sản lượng của WO này" KHÔNG phải `raw_counter`, mà là:
+         WO_VALUE = max(0, raw_now − baseline_tại_lúc_WO_bắt_đầu)
+
+ Bảng `counter_baseline` lưu mốc đó:
+     node_id, machine_id, tag_code, work_order_id, baseline_value, recorded_at
+
+ Tương đương bảng `VNK_DL_COUNTER_WO_BASELINE` của hệ Vinamilk.
+ ⇒ Phase 2 sẽ chèn mốc này tự động khi nhận sự kiện WO_START.
+
+ -------------------------------------------------------------------------------
+ 6. PHÒNG NGỪA — CÁCH DÙNG
+-------------------------------------------------------------------------------
+ · Có PostgreSQL:
+     $env:MASTER_DB_URL = "postgres://smartfactory:smartfactory@<host>:5432/smartfactory"
+     → master-api đọc PG. Nạp seed:
+       python tools/gen_master_data.py
+       python tools/gen_seed_sql.py
+       psql ... -f postgres/init/02_seed_master_data.sql
+ · Chưa có PostgreSQL: để trống `MASTER_DB_URL` → master-api đọc
+   `config/master_data.json` (đã commit sẵn trong repo).
+
+ -------------------------------------------------------------------------------
+ 7. CÒN LẠI (PHASE 2 & 3)
+-------------------------------------------------------------------------------
+ Phase 2 — Batch & Data Lake:
+   · `spark/apps/kafka_to_minio.py`   : telemetry → Parquet trên MinIO
+                                        (đã bị xoá ở commit a4f6725 → cần viết lại)
+   · `spark/apps/minio_to_postgres.py` : Parquet → production_metric / quality_metric
+                                        / data_quality_metric (cũng bị xoá)
+   · Tính `downtime_event` + `oee_metric` từ raw.
+   · Ghi `counter_baseline` khi WO bắt đầu.
+ Phase 3 — API OEE & tích hợp:
+   · Endpoint OEE theo line/shift/WO (đọc `oee_metric`).
+   · Frontend chuyển OEE từ tính-tay sang đọc API.
+   · Cảnh báo: planned_qty hiện là MỘT giá trị cho cả ca; khi có nhiều ca/ngày
+     cần `production_plan` theo ngày và so với "pace" (đã có `paceProgress`).

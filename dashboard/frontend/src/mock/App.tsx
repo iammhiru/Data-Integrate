@@ -36,6 +36,7 @@ import { MACHINES } from "./catalog.gen";
 import { MockSource, type TelemetrySource } from "./telemetry-source";
 import { LiveSource, liveEnabled } from "./live-source";
 import { buildStore, TelemetryContext, type TelemetryStore } from "./store";
+import { loadMasterData, type MasterData } from "./master-data";
 import { PlantOverview } from "./pages/PlantOverview";
 import { LineView } from "./pages/LineView";
 import { MachineDetail } from "./pages/MachineDetail";
@@ -64,6 +65,22 @@ export default function MockApp() {
   const isLive = source.kind === "live";
 
   const [store, setStore] = useState<TelemetryStore>(() => buildStore(source));
+  /**
+   * Master data (đường chạy, SKU, kế hoạch, work order) — tải 1 lần lúc
+   * mount từ `master-api`. Trong lúc chờ, store dùng fallback.
+   */
+  const [master, setMaster] = useState<MasterData | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadMasterData().then((m) => {
+      if (!alive) return;
+      setMaster(m);
+      setStore(buildStore(source, m));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [source]);
   const [page, setPage] = useState<Page>("plant");
   const [lineId, setLineId] = useState<string>("LINE_01");
   const [drawer, setDrawer] = useState<Drawer>(null);
@@ -74,10 +91,10 @@ export default function MockApp() {
   // Vòng cập nhật 1 Hz — tương đương SignalR push 1 snapshot/s.
   useEffect(() => {
     const t = setInterval(() => {
-      setStore(buildStore(source));
+      setStore(buildStore(source, master));
     }, 1000);
     return () => clearInterval(t);
-  }, [source]);
+  }, [source, master]);
 
   /**
    * Nguồn LIVE tự đẩy dữ liệu qua WebSocket (`state-api` gom thay đổi mỗi
@@ -91,7 +108,7 @@ export default function MockApp() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const rebuild = () => {
       last = Date.now();
-      setStore(buildStore(source));
+      setStore(buildStore(source, master));
     };
     const off = source.onChange(() => {
       const now = Date.now();
@@ -110,7 +127,7 @@ export default function MockApp() {
       if (timer) clearTimeout(timer);
       source.stop();
     };
-  }, [source]);
+  }, [source, master]);
 
   // Ghi lịch sử cho sparkline + xu hướng sản lượng (mỗi lần store đổi).
   useEffect(() => {
