@@ -1,4 +1,38 @@
+// ============================================================================
+//  Test cho TRANG CHẨN ĐOÁN PIPELINE (/diagnostics.html) — app "Factory Pulse".
+//
+//  ⚠ YÊU CẦU HẠ TẦNG: các test này CẦN backend .NET cũ (Factory.Api) chạy
+//    ở http://localhost:5080 (SignalR `/hubs/telemetry` + REST `/api/snapshot`).
+//    Không có backend → TẤT CẢ test fail (không phải do lỗi UI).
+//
+//    → Vì vậy file này được đánh dấu `test.skip` khi backend không chạy.
+//      Chạy riêng nhóm UI vận hành (không cần backend):
+//        npx playwright test tests/mock-ui.spec.ts tests/live-ws.spec.ts
+//
+//  Lưu ý: nhóm này KHÔNG liên quan tới tích hợp WebSocket `state-api`
+//  (xem docs/INTEGRATION_LIVE_WS_2026-11-13.md).
+// ============================================================================
+
 import { test, expect } from "@playwright/test";
+
+/** Backend .NET cũ có đang chạy không? */
+async function legacyBackendUp(baseURL: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${baseURL}/api/snapshot`, {
+      signal: AbortSignal.timeout(4000),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+test.beforeEach(async ({ baseURL }) => {
+  test.skip(
+    !(await legacyBackendUp(baseURL!)),
+    "Cần backend .NET cũ ở :5080 (SignalR /hubs/telemetry) — bỏ qua test chẩn đoán.",
+  );
+});
 
 async function maskTelemetry(
   page: import("@playwright/test").Page,
@@ -39,7 +73,7 @@ test("missing telemetry is unknown, not zero running or stopped", async ({
   page,
 }) => {
   await maskTelemetry(page, false);
-  await page.goto("/");
+  await page.goto("/diagnostics.html");
   await expect(page.getByTestId("telemetry-coverage")).toContainText("0/100");
   for (const label of ["Đang vận hành", "Đang dừng"]) {
     const metric = page.locator(".metric").filter({ hasText: label });
@@ -55,7 +89,7 @@ test("known stopped machine allows real zero and reports remaining unknown", asy
   page,
 }) => {
   await maskTelemetry(page, true);
-  await page.goto("/");
+  await page.goto("/diagnostics.html");
   await expect(page.getByTestId("telemetry-coverage")).toContainText("1/100");
   await expect(page.getByTestId("telemetry-coverage")).toContainText(
     "99 máy chưa rõ",
@@ -76,7 +110,7 @@ test("known stopped machine allows real zero and reports remaining unknown", asy
 test("repository catalog, filters, detail and analysis", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/");
+  await page.goto("/diagnostics.html");
   await expect(page.getByText("Đã kết nối", { exact: true })).toBeVisible();
   await expect(page.locator(".machine-card")).toHaveCount(100);
   await page.getByRole("button", { name: "Dây chuyền 1", exact: true }).click();
@@ -101,7 +135,7 @@ test("repository catalog, filters, detail and analysis", async ({ page }) => {
 });
 test("mobile and empty filter", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/");
+  await page.goto("/diagnostics.html");
   await expect(page.locator(".machine-card")).toHaveCount(100);
   expect(
     await page.evaluate(
@@ -141,7 +175,7 @@ test("reconnects after interrupted socket", async ({ page }) => {
     count++;
     ws.connectToServer();
   });
-  await page.goto("/");
+  await page.goto("/diagnostics.html");
   await expect(page.getByText("Đã kết nối", { exact: true })).toBeVisible();
   socket.close({ code: 1001, reason: "test" });
   await expect.poll(() => count).toBeGreaterThanOrEqual(2);
@@ -149,7 +183,7 @@ test("reconnects after interrupted socket", async ({ page }) => {
   await expect(page.locator(".machine-card")).toHaveCount(100);
 });
 test("desktop screenshot", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/diagnostics.html");
   await expect(page.locator(".machine-card")).toHaveCount(100);
   await page.screenshot({ path: "../artifacts/dashboard.png", fullPage: true });
 });

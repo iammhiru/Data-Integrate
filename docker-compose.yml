@@ -17,14 +17,12 @@ x-spark-common: &spark-common
 
 x-spark-job: &spark-job
   <<: *spark-common
-  profiles: ["streaming"]
+  profiles: ["telemetry"]
   restart: unless-stopped
   depends_on:
     spark-master:
       condition: service_healthy
     kafka:
-      condition: service_healthy
-    postgres:
       condition: service_healthy
 
 services:
@@ -57,7 +55,7 @@ services:
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
       interval: 10s
-      timeout: 10s
+      timeout: 30s               # healthcheck khoi dong 1 JVM -> may yeu/qua tai can timeout rong
       retries: 12
       start_period: 15s
     networks: [smart-factory]
@@ -184,33 +182,70 @@ services:
       spark-master:
         condition: service_healthy
 
-  # ---------------------------------------------------------------- Streaming jobs (profile: streaming)
-  # docker compose --profile streaming up -d
-  # Driver chay trong container rieng (client mode), executor chay tren spark-worker.
-  stream-raw-ingest:
-    <<: *spark-job
-    container_name: stream-raw-ingest
-    hostname: stream-raw-ingest
-    command: ["/opt/spark/bin/spark-submit",
-              "--conf", "spark.cores.max=1", "--conf", "spark.driver.memory=512m",
-              "--conf", "spark.driver.host=stream-raw-ingest",
-              "/opt/spark-apps/kafka_to_minio.py", "--trigger", "1 minute"]
-    ports:
-      - "4041:4040"            # Spark UI cua job raw ingest
+  # ---------------------------------------------------------------- Luong trang thai may (profile: telemetry)
+  # docker compose --profile telemetry up -d --build
+  # Middleware (gia lap Kepware) -> industrial.telemetry -> Spark -> machine-state (compacted) -> state-api
+  middleware-sim:
+    build:
+      context: ./IndustrialTelemetry.Middleware
+      dockerfile: ../docker/middleware/Dockerfile
+    image: smart-factory/middleware:local
+    container_name: middleware-sim
+    profiles: ["telemetry"]
+    environment:
+      SIMULATION_MODE: "true"
+      SIMULATION_SPEED_FACTOR: ${SIMULATION_SPEED_FACTOR:-1.0}
+      SIMULATION_QUALITY_FAULT_RATE: ${SIMULATION_QUALITY_FAULT_RATE:-0.01}
+      KAFKA_BROKERS: kafka:9092
+      KAFKA_TOPIC: industrial.telemetry
+      STATS_INTERVAL_SEC: 30
+      # middleware ghi log MOI message (console + 2 file) o muc INFO -> rat ton CPU. Doi INFO de debug.
+      LOG_CONSOLE_LEVEL: ${MIDDLEWARE_LOG_LEVEL:-WARNING}
+      LOG_FILE_LEVEL: ${MIDDLEWARE_LOG_LEVEL:-WARNING}
+    logging:
+      driver: json-file
+      options: {max-size: "20m", max-file: "3"}
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks: [smart-factory]
 
-  stream-realtime:
+  stream-machine-state:
     <<: *spark-job
-    container_name: stream-realtime
-    hostname: stream-realtime
+    profiles: ["telemetry"]
+    container_name: stream-machine-state
+    hostname: stream-machine-state
     command: ["/opt/spark/bin/spark-submit",
-              "--conf", "spark.cores.max=3", "--conf", "spark.driver.memory=512m",
-              "--conf", "spark.driver.host=stream-realtime",
-              "--conf", "spark.sql.shuffle.partitions=3",
-              "--conf", "spark.sql.streaming.stateStore.providerClass=org.apache.spark.sql.execution.streaming.state.RocksDBStateStoreProvider",
-              "--conf", "spark.sql.streaming.stateStore.rocksdb.changelogCheckpointing.enabled=true",
-              "/opt/spark-apps/realtime_metrics.py"]
+              "--conf", "spark.cores.max=2", "--conf", "spark.driver.memory=512m",
+              "--conf", "spark.executor.memory=768m",
+              "--conf", "spark.driver.host=stream-machine-state",
+              "--conf", "spark.sql.shuffle.partitions=2",
+              "/opt/spark-apps/machine_state_stream.py"]
+    depends_on:
+      spark-master:
+        condition: service_healthy
+      kafka-init:
+        condition: service_completed_successfully
     ports:
-      - "4042:4040"            # Spark UI cua job realtime
+      - "4043:4040"            # Spark UI cua job machine state
+
+  state-api:
+    build:
+      context: ./services/state-api
+    image: smart-factory/state-api:local
+    container_name: state-api
+    profiles: ["telemetry"]
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9092
+      STATE_TOPIC: machine-state
+    ports:
+      - "8000:8000"            # http://localhost:8000/docs
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks: [smart-factory]
 
   dashboard:
     build:

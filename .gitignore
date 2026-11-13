@@ -46,8 +46,27 @@ run_*.log
 htmlcov/
 _tag_tables.md
 
+# ─── Prompt giao việc nội bộ (không đưa lên repo) ─────────────────────────
+prompt.md
+work.md
+
+# ─── Ảnh chụp tạm (script tự sinh) ─────────────────────────────────────────
+dashboard/frontend/tools/_*.png
+dashboard/frontend/shots/
+
 # ─── IDE / OS ──────────────────────────────────────────────────────────────
 .vscode/
 *.swp
 Thumbs.db
 desktop.ini
+
+# ─── Artifacts chạy pipeline native trên Windows (không đưa lên repo) ─────
+# Log stdout/stderr của các tiến trình nền do scripts/run-*.ps1 ghi ra.
+logs-*.out
+logs-*.err
+# Checkpoint Spark Structured Streaming (sinh lại khi chạy lại).
+.spark-checkpoints/
+# Class đã biên dịch của patch Hadoop (build lại từ .java).
+scripts/hadoop-patch/classes/
+# winutils.exe được copy từ scripts/winutils/winutils.exe khi chạy.
+scripts/winutils/bin/
