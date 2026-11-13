@@ -111,9 +111,15 @@ class PostgresSource:
             "SELECT wo_id, wo_code, line_id, product_id, shift_id, planned_qty, status, "
             "actual_start_time, actual_end_time FROM work_order ORDER BY wo_id"
         )
+        # ⚠ Kế hoạch được seed theo `CURRENT_DATE` (ngày khởi tạo DB). Nếu
+        #   chạy qua ngày mới, dòng đó không còn khớp → lấy kế hoạch GẦN NHẤT
+        #   đã có (plan_date <= hôm nay), ưu tiên bản mới nhất.
         plans = self._query(
-            "SELECT line_id, shift_id, product_id, plan_date, planned_qty, theoretical_qty "
-            "FROM production_plan WHERE plan_date = CURRENT_DATE"
+            "SELECT DISTINCT ON (line_id, shift_id) "
+            "       line_id, shift_id, product_id, plan_date, planned_qty, theoretical_qty "
+            "FROM production_plan "
+            "WHERE plan_date <= CURRENT_DATE "
+            "ORDER BY line_id, shift_id, plan_date DESC"
         )
         mapping = self._query(
             "SELECT source, source_id, machine_id FROM machine_id_mapping ORDER BY source, source_id"

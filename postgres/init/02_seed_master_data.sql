@@ -8,7 +8,8 @@
 --    · SKU     <- khai bao trong tools/gen_master_data.py
 --    · Ideal Cycle Time <- DesignSpeed thuc te doc tu state-api
 --  Moi truong: CHAY LAI khi doi master data:
---    docker compose exec -T postgres psql -U smartfactory -d smartfactory \
+--    docker compose -f docker-compose.server.yml exec -T postgres \
+--        psql -U sf_user -d smart_factory \
 --        -f /docker-entrypoint-initdb.d/02_seed_master_data.sql
 -- ============================================================================
 

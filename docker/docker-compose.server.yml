@@ -1,0 +1,121 @@
+# ============================================================================
+#  HẠ TẦNG PHÍA SERVER — PostgreSQL + MinIO cho máy Linux 192.168.179.176
+#  (cài giống cách Kafka đã được cài trên cùng máy đó)
+#
+#  CÁCH DÙNG:
+#    1. Copy file này + thư mục `postgres/init/` sang máy server:
+#         scp docker/docker-compose.server.yml <user>@192.168.179.176:/home/dev/smart-factory/
+#         scp -r postgres/init <user>@192.168.179.176:/home/dev/smart-factory/postgres/
+#    2. Trên máy server:
+#         cd /home/dev/smart-factory
+#         docker compose -f docker-compose.server.yml up -d
+#    3. Kiểm tra:
+#         docker compose -f docker-compose.server.yml ps
+#         docker compose -f docker-compose.server.yml exec postgres \
+#             psql -U sf_user -d smart_factory -c '\dt'
+#
+#  ⚠ KHỞI TẠO DB CHỈ CHẠY 1 LẦN (khi volume `postgres-data` còn trống).
+#     Muốn nạp lại seed sau này → dùng lệnh psql trong mục 5 của
+#     docs/deploy-remote-infra.md (KHÔNG xoá volume).
+#
+#  ⚠ CỔNG: 5432 (PostgreSQL) và 9000/9001 (MinIO) — đều phải MỞ TRONG
+#     FIREWALL của máy server để máy Windows của bạn kết nối được.
+# ============================================================================
+
+name: smart-factory-server
+
+services:
+  # ---------------------------------------------------------------- PostgreSQL
+  postgres:
+    image: postgres:16
+    container_name: sf-postgres
+    hostname: sf-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"          # client tu may Windows: 192.168.179.176:5432
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-smart_factory}
+      POSTGRES_USER: ${POSTGRES_USER:-sf_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sf_password}
+      # Locale + timezone: dung cho dong thoi gian Viet Nam trong bao cao OEE.
+      TZ: Asia/Ho_Chi_Minh
+      PGTZ: Asia/Ho_Chi_Minh
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # Script khoi tao: chi chay lan dau (volume con trong).
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - postgres
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - work_mem=16MB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # ---------------------------------------------------------------- MinIO (Data Lake)
+  #
+  # Image `minio/minio` bi go khoi Docker Hub -> dung `alpine/minio` (build tu
+  # source chinh thuc), giong voi docker-compose.yml trong repo.
+  minio:
+    image: alpine/minio:RELEASE.2025-10-15T17-29-55Z
+    container_name: sf-minio
+    hostname: sf-minio
+    user: "0:0"                # image chay user 'minio' -> khong ghi duoc named volume
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"            # S3 API (Spark ghi parquet o day)
+      - "9001:9001"            # Web console
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # Tao bucket `smart-factory` (chay 1 lan roi thoat).
+  minio-init:
+    image: amazon/aws-cli:2.27.0
+    container_name: sf-minio-init
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      AWS_DEFAULT_REGION: us-east-1
+      MINIO_BUCKET: ${MINIO_BUCKET:-smart-factory}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        aws --endpoint-url http://minio:9000 s3api head-bucket --bucket "$$MINIO_BUCKET" 2>/dev/null \
+          || aws --endpoint-url http://minio:9000 s3 mb "s3://$$MINIO_BUCKET"
+        echo "bucket $$MINIO_BUCKET ready"
+    networks: [default]
+
+volumes:
+  postgres-data:
+  minio-data:
