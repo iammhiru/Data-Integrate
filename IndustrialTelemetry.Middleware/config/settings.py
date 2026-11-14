@@ -202,6 +202,14 @@ SIMULATION_QUALITY_FAULT_RATE: float = _float(
 #: Ghi trong source.system — "simulator" khi chạy chế độ giả lập.
 SIMULATION_SOURCE_SYSTEM: str = _str("SIMULATION_SOURCE_SYSTEM", "simulator")
 
+#: File JSON chứa DesignSpeed thật của từng máy ({"<machineId>": {"design_speed": x,
+#: "unit": "..."}}). Simulator dùng file này để tốc độ thiết kế KHỚP với
+#: ``machine.ideal_speed`` trong PostgreSQL ⇒ Performance tính được chuẩn.
+#: Để trống = simulator tự sinh ngẫu nhiên trong khoảng hợp lý.
+SIMULATION_DESIGN_SPEED_FILE: str = _str(
+    "SIMULATION_DESIGN_SPEED_FILE", "metadata/design_speed.json"
+)
+
 # ─── Logging ─────────────────────────────────────────────────────────────────
 
 LOGS_DIR: Path = _path("LOGS_DIR", "logs")

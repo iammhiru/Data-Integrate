@@ -1,0 +1,106 @@
+{
+    "L02_BLOWER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  89.905
+                      },
+    "L01_CASEPACKER_01":  {
+                              "unit":  "cases/min",
+                              "design_speed":  112.079
+                          },
+    "L02_LABELER_01":  {
+                           "unit":  "bottles/min",
+                           "design_speed":  85.293
+                       },
+    "L01_RINSER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  83.0
+                      },
+    "CIP_SKID_01":  {
+                        "unit":  null,
+                        "design_speed":  null
+                    },
+    "L01_CODER_01":  {
+                         "unit":  "pcs/min",
+                         "design_speed":  136.083
+                     },
+    "L02_FILLER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  118.872
+                      },
+    "L02_PREFEED_01":  {
+                           "unit":  "preform/min",
+                           "design_speed":  93.943
+                       },
+    "L01_AIRCONV_01":  {
+                           "unit":  "m/min",
+                           "design_speed":  111.11
+                       },
+    "L01_FILLER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  141.694
+                      },
+    "L03_CANDEPAL_01":  {
+                            "unit":  "cans/min",
+                            "design_speed":  124.492
+                        },
+    "L01_PREFEED_01":  {
+                           "unit":  "preform/min",
+                           "design_speed":  132.731
+                       },
+    "L03_CANINSPECT_01":  {
+                              "unit":  "cans/min",
+                              "design_speed":  138.507
+                          },
+    "L03_CANRINSER_01":  {
+                             "unit":  "cans/min",
+                             "design_speed":  148.43
+                         },
+    "L02_RINSER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  85.665
+                      },
+    "L02_CODER_01":  {
+                         "unit":  "pcs/min",
+                         "design_speed":  122.879
+                     },
+    "L02_AIRCONV_01":  {
+                           "unit":  "m/min",
+                           "design_speed":  113.435
+                       },
+    "L01_CAPPER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  104.178
+                      },
+    "L03_CANFILLER_01":  {
+                             "unit":  "cans/min",
+                             "design_speed":  102.085
+                         },
+    "L02_CASEPACKER_01":  {
+                              "unit":  "cases/min",
+                              "design_speed":  88.191
+                          },
+    "L03_CANCODER_01":  {
+                            "unit":  "pcs/min",
+                            "design_speed":  112.949
+                        },
+    "L02_CAPPER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  100.128
+                      },
+    "L01_BLOWER_01":  {
+                          "unit":  "bottles/min",
+                          "design_speed":  147.8
+                      },
+    "L03_CASEPACKER_01":  {
+                              "unit":  "cases/min",
+                              "design_speed":  109.75
+                          },
+    "L03_SEAMER_01":  {
+                          "unit":  "cans/min",
+                          "design_speed":  123.88
+                      },
+    "L01_LABELER_01":  {
+                           "unit":  "bottles/min",
+                           "design_speed":  87.738
+                       }
+}
