@@ -109,7 +109,9 @@ class PostgresSource:
         )
         work_orders = self._query(
             "SELECT wo_id, wo_code, line_id, product_id, shift_id, planned_qty, status, "
-            "actual_start_time, actual_end_time FROM work_order ORDER BY wo_id"
+            "planned_start, planned_end, actual_start_time, actual_end_time, "
+            "released_at, released_by, operator_id, note, seq, unit, paused_at "
+            "FROM work_order ORDER BY wo_id"
         )
         # ⚠ Kế hoạch được seed theo `CURRENT_DATE` (ngày khởi tạo DB). Nếu
         #   chạy qua ngày mới, dòng đó không còn khớp → lấy kế hoạch GẦN NHẤT
@@ -189,11 +191,35 @@ class Cache:
             self._source = source
             return data, source
 
+    def invalidate(self) -> None:
+        """Xoa cache -> lan doc sau lay du lieu moi tu PostgreSQL.
+
+        Dung sau khi co thao tac ghi Work Order (tao/phat hanh/bat dau/...).
+        """
+        with self._lock:
+            self._data = None
+            self._at = 0.0
+
 
 pg_source = PostgresSource(DB_URL) if DB_URL else None
 cache = Cache()
 
 app = FastAPI(title="Master Data API", version="1.0")
+
+# ────────────────────────────────────────────────────────────── Work Order (MES)
+# Nghiep vu vong doi WO (tao phieu -> phat hanh -> chay -> hoan thanh).
+# Chi khi co PostgreSQL: ghi WO bat buoc can DB.
+_wo_store = None
+if DB_URL:
+    try:
+        from work_orders import WoStore, build_router  # noqa: PLC0415
+
+        _wo_store = WoStore(DB_URL)
+        app.include_router(build_router(_wo_store, on_change=cache.invalidate))
+        log.info("da dang ky API vong doi Work Order (POST/PUT + action)")
+    except Exception as exc:  # noqa: BLE001 - thiếu schema -> chi read API chạy
+        log.warning("khong khoi dong duoc API Work Order: %s", exc)
+        _wo_store = None
 
 
 def _master() -> dict[str, Any]:
@@ -228,7 +254,7 @@ def _line_view(line: dict, data: dict, shift: dict | None) -> dict:
     wo = next(
         (w for w in data["work_orders"]
          if w.get("line_id") == line.get("line_id")
-         and w.get("status") == "RUNNING"
+         and w.get("status") in ("IN_PROGRESS", "PAUSED", "RUNNING")
          and (shift_id is None or w.get("shift_id") in (None, shift_id))),
         None,
     )
@@ -335,13 +361,58 @@ def get_products():
 
 
 @app.get("/api/work-orders")
-def get_work_orders(lineId: str | None = Query(None), status: str | None = Query(None)):
+def get_work_orders(lineId: str | None = Query(None), status: str | None = Query(None),
+                    from_: datetime | None = Query(None, alias="from"),
+                    to: datetime | None = Query(None)):
+    """Danh sach lenh san xuat.
+
+    Uu tien doc truc tiep PostgreSQL (co tien do san luong + cot moi).
+    Neu khong co DB -> fallback ve cache master data.
+    """
+    if _wo_store is not None:
+        sql = ("SELECT * FROM work_order_progress WHERE 1=1")
+        args: list[Any] = []
+        if lineId:
+            sql += " AND line_id = %s"
+            args.append(lineId)
+        if status:
+            sql += " AND status = %s"
+            args.append(status.upper())
+        if from_:
+            sql += " AND (actual_start_time >= %s OR actual_start_time IS NULL)"
+            args.append(from_)
+        if to:
+            sql += " AND (actual_start_time < %s OR actual_start_time IS NULL)"
+            args.append(to)
+        sql += " ORDER BY line_id, seq"
+        return {"workOrders": _wo_store.all(sql, tuple(args))}
+
     data, _ = cache.get()
     items = data.get("work_orders", [])
     if lineId:
         items = [w for w in items if w.get("line_id") == lineId]
     if status:
         items = [w for w in items if (w.get("status") or "").upper() == status.upper()]
+    return {"workOrders": items}
+
+
+@app.get("/api/work-orders/current")
+def get_current_work_order(lineId: str | None = Query(None)):
+    """Lenh san xuat DANG CHAY cua tung chuyen (1 chuyen = 1 lenh chay)."""
+    if _wo_store is not None:
+        sql = ("SELECT * FROM work_order_progress WHERE status IN ('IN_PROGRESS','PAUSED')")
+        args: list[Any] = []
+        if lineId:
+            sql += " AND line_id = %s"
+            args.append(lineId)
+        sql += " ORDER BY line_id"
+        return {"workOrders": _wo_store.all(sql, tuple(args))}
+
+    data, _ = cache.get()
+    items = [w for w in data.get("work_orders", [])
+             if w.get("status") in ("IN_PROGRESS", "PAUSED", "RUNNING")]
+    if lineId:
+        items = [w for w in items if w.get("line_id") == lineId]
     return {"workOrders": items}
 
 

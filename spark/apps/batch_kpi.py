@@ -40,9 +40,10 @@ COUNTERS = {"TotalCounter": "total", "GoodCounter": "good", "DefectCounter": "de
 KPI_COLS = ["machine_id", "ts_minute", "line_id", "product_id", "shift_id", "shift_date",
             "run_sec", "starting_sec", "stopped_sec", "faulted_sec", "maint_sec", "off_sec", "nodata_sec",
             "stop_events", "total_count", "good_count", "defect_count", "ideal_time_sec", "counter_reset",
-            "design_speed", "state_end", "state_since", "total_end", "good_end", "defect_end"]
+            "design_speed", "state_end", "state_since", "total_end", "good_end", "defect_end",
+            "wo_id", "wo_code"]
 INTERVAL_COLS = ["machine_id", "start_ts", "end_ts", "state", "state_name", "duration_sec", "is_open",
-                 "line_id", "shift_id", "shift_date"]
+                 "line_id", "shift_id", "shift_date", "wo_id", "wo_code"]
 TAG_COLS = ["machine_id", "tag_name", "ts_minute", "n", "sum", "min", "max", "last"]
 DQ_COLS = ["machine_id", "ts_minute", "received", "invalid", "duplicate", "missing_value", "late",
            "bad_quality", "valid"]
@@ -141,6 +142,14 @@ def load_master(pg: Pg, tz: str):
     machines = pg.read("SELECT m.machine_id, m.line AS line_id, l.product_id, m.ideal_speed "
                        "FROM machine m LEFT JOIN line l ON l.line_id = m.line")
     shifts = pg.read("SELECT shift_id, start_time::text AS st, end_time::text AS et FROM shift").collect()
+    # Work order: moi chuyen chi chay 1 lenh tai mot thoi diem.
+    # Doc tat ca lenh da/đang chay de gan fact theo khoang thoi gian thuc te.
+    wos = pg.read(
+        "SELECT wo_id, wo_code, line_id, product_id, actual_start_time, actual_end_time "
+        "FROM work_order "
+        "WHERE status IN ('IN_PROGRESS', 'PAUSED', 'COMPLETED') "
+        "  AND actual_start_time IS NOT NULL"
+    ).collect()
 
     def shift_cols(ts_col: str) -> tuple:
         local = F.from_utc_timestamp(F.col(ts_col), tz)
@@ -160,14 +169,63 @@ def load_master(pg: Pg, tz: str):
             return F.lit(None).cast("string"), F.lit(None).cast("date")
         return sid, sdate
 
-    return machines, shift_cols
+    return machines, shift_cols, wos
+
+
+def wo_assignment(wos, ts_col: str, line_col: str = "line_id"):
+    """Sinh hai cot (wo_id, wo_code) theo khoang thoi gian thuc te cua tung lenh.
+
+    WO chay tu `actual_start_time` den `actual_end_time` (neu NULL -> con chay).
+    Mot chuyen chi chay 1 lenh -> moi phut thuoc toi da 1 lenh.
+    Cac lenh cu cu theo tung phut: dung bien `ts` (timestamp cua phut) de so sanh.
+
+    ⚠ PHẢI khoá theo CHUYỀN: may thuoc chuyen khac khong duoc gan nham
+    (neu khong khoa line, may LINE_02/03 se bi gan WO cua LINE_01).
+
+    Args:
+        wos: list[Row] tu `load_master` (moi row: wo_id, wo_code, line_id,
+             product_id, actual_start_time, actual_end_time).
+        ts_col: ten cot timestamp trong DataFrame de gan (VD: "ts_minute").
+        line_col: ten cot chuyen tren DataFrame de so sanh.
+
+    Returns:
+        (wo_id_expr, wo_code_expr) — moi cai la F.when(...).otherwise(None).
+    """
+    if not wos:
+        return F.lit(None).cast("string"), F.lit(None).cast("string")
+    wo_id = None
+    wo_code = None
+    for w in wos:
+        start = w.actual_start_time
+        if start is None:
+            continue
+        end = w.actual_end_time
+        # `ts_minute` trong DataFrame la timestamp NAIVE (UTC) — ep moi moc
+        # ve naive UTC de so sanh duoc (Spark khong so sanh naive vs tz-aware).
+        start_u = start.astimezone(timezone.utc).replace(tzinfo=None)
+        end_u = end.astimezone(timezone.utc).replace(tzinfo=None) if end is not None else None
+        # [start, end) — neu end NULL -> toi hien tai
+        cond = F.col(ts_col) >= F.lit(start_u)
+        if end_u is not None:
+            cond = cond & (F.col(ts_col) < F.lit(end_u))
+        else:
+            cond = cond & (F.col(ts_col) <= F.lit(datetime.now(timezone.utc).replace(tzinfo=None)))
+        # khoa theo chuyen: may phai thuoc chuyen cua lenh
+        if w.line_id is not None:
+            cond = cond & (F.col(line_col) == F.lit(w.line_id))
+        wo_id = F.when(cond, F.lit(w.wo_id)) if wo_id is None else wo_id.when(cond, F.lit(w.wo_id))
+        wo_code = (F.when(cond, F.lit(w.wo_code)) if wo_code is None
+                   else wo_code.when(cond, F.lit(w.wo_code)))
+    if wo_id is None:
+        return F.lit(None).cast("string"), F.lit(None).cast("string")
+    return wo_id.otherwise(F.lit(None).cast("string")), wo_code.otherwise(F.lit(None).cast("string"))
 
 
 # ============================================================================ tinh toan
 def compute(spark: SparkSession, pg: Pg, args: argparse.Namespace, rs: datetime, re: datetime,
             ingest_to: datetime) -> dict:
     base = f"s3a://{args.bucket}/raw"
-    machines, shift_cols = load_master(pg, args.tz)
+    machines, shift_cols, wos = load_master(pg, args.tz)
     machines = machines.cache()
     rs_l, re_l = F.lit(rs).cast("timestamp"), F.lit(re).cast("timestamp")
 
@@ -299,24 +357,32 @@ def compute(spark: SparkSession, pg: Pg, args: argparse.Namespace, rs: datetime,
     good = F.when(F.col("has_good"), F.coalesce(F.col("good_d"), F.lit(0.0))) \
             .otherwise(F.greatest(total - defect, F.lit(0.0)))
     sid, sdate = shift_cols("ts_minute")
+    # ---- gan Work Order theo khoang thoi gian thuc te cua tung lenh
+    # (khoa them theo chuyen de may khac chuyen khong bi gan nham)
+    wo_id_expr, wo_code_expr = wo_assignment(wos, "ts_minute", "line_id")
     kpi = (kpi.withColumn("total_count", total.cast("long"))
            .withColumn("good_count", good.cast("long"))
            .withColumn("defect_count", defect.cast("long"))
            .withColumn("ideal_time_sec", F.when(F.col("design_speed") > 0, total * 60.0 / F.col("design_speed"))
                        .otherwise(F.lit(0.0)))
            .withColumn("shift_id", sid).withColumn("shift_date", sdate)
+           .withColumn("wo_id", wo_id_expr).withColumn("wo_code", wo_code_expr)
            .withColumn("state_end", F.col("state_end").cast("short"))
            .select(*KPI_COLS))
 
     # ------------------------------------------------------------------ khoang trang thai (bang downtime)
     state_name = F.create_map(*[x for k, n in STATE_NAMES.items() for x in (F.lit(k), F.lit(n))])
     isid, isdate = shift_cols("start_ts")
-    intervals_out = (intervals.join(machines.select("machine_id", "line_id"), "machine_id", "left")
+    # JOIN master truoc de co `line_id` — can cho viec khoa WO theo chuyen.
+    intervals_joined = intervals.join(machines.select("machine_id", "line_id"), "machine_id", "left")
+    iwo_id, iwo_code = wo_assignment(wos, "start_ts", "line_id")
+    intervals_out = (intervals_joined
                      .withColumn("state_name", F.coalesce(state_name[F.col("state")], F.lit("UNKNOWN")))
                      .withColumn("duration_sec", (F.unix_micros("end_ts") - F.unix_micros("start_ts")) / 1e6)
                      .withColumn("is_open", F.col("end_ts") >= re_l)
                      .withColumn("state", F.col("state").cast("short"))
                      .withColumn("shift_id", isid).withColumn("shift_date", isdate)
+                     .withColumn("wo_id", iwo_id).withColumn("wo_code", iwo_code)
                      .select(*INTERVAL_COLS))
 
     # ------------------------------------------------------------------ tag so / phut
@@ -390,14 +456,16 @@ def compute(spark: SparkSession, pg: Pg, args: argparse.Namespace, rs: datetime,
                              ELSE EXCLUDED.is_open END,
               duration_sec = EXTRACT(EPOCH FROM (CASE WHEN EXCLUDED.is_open
                                THEN GREATEST(t.end_ts, EXCLUDED.end_ts) ELSE EXCLUDED.end_ts END) - t.start_ts),
-              state = EXCLUDED.state, state_name = EXCLUDED.state_name""",
+              state = EXCLUDED.state, state_name = EXCLUDED.state_name,
+              wo_id = EXCLUDED.wo_id, wo_code = EXCLUDED.wo_code""",
         # rollup gio cho cac gio bi anh huong
         f"DELETE FROM machine_kpi_1h WHERE ts_hour >= '{h0}' AND ts_hour < '{h1}'",
         f"""INSERT INTO machine_kpi_1h
             SELECT machine_id, date_trunc('hour', ts_minute), max(line_id), max(product_id), max(shift_id),
                    max(shift_date), count(*), sum(run_sec), sum(starting_sec), sum(stopped_sec), sum(faulted_sec),
                    sum(maint_sec), sum(off_sec), sum(nodata_sec), sum(stop_events), sum(total_count),
-                   sum(good_count), sum(defect_count), sum(ideal_time_sec)
+                   sum(good_count), sum(defect_count), sum(ideal_time_sec),
+                   max(wo_id), max(wo_code)
             FROM machine_kpi_1m WHERE ts_minute >= '{h0}' AND ts_minute < '{h1}'
             GROUP BY machine_id, date_trunc('hour', ts_minute)""",
         # staging chi dung trong lan chay -> XOA HANG (khong giu ban sao du lieu)

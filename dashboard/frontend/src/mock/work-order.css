@@ -1,0 +1,709 @@
+/* ==========================================================================
+   WORK ORDER (MES) — styles cho A1 danh sach / A2 form / A3 thuc thi
+   Phai qua token, khong hard-code hex (dong luan voi app.css).
+   ========================================================================== */
+
+/* ── Nut ─────────────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: var(--fs-body);
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-default);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-contrast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border-subtle);
+  color: var(--text-secondary);
+}
+
+.btn-ok {
+  background: var(--state-running);
+  border-color: var(--state-running);
+  color: var(--text-inverse);
+}
+
+.btn-ok:hover:not(:disabled) {
+  background: var(--state-running-fg);
+  border-color: var(--state-running-fg);
+}
+
+.btn-warn {
+  background: var(--mock-badge-bg);
+  border-color: var(--mock-badge-border);
+  color: var(--mock-badge-fg);
+}
+
+.btn-danger {
+  background: var(--state-fault-bg);
+  border-color: var(--state-fault);
+  color: var(--state-fault-fg);
+}
+
+.btn-sm {
+  padding: 3px 9px;
+  font-size: var(--fs-support);
+}
+
+/* ── Trang ───────────────────────────────────────────────────────────── */
+.wo-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  padding: var(--sp-4) 0 var(--sp-5);
+}
+
+.wo-loading {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  color: var(--text-muted);
+}
+
+.wo-spin {
+  animation: wo-spin 1s linear infinite;
+}
+
+@keyframes wo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Tieu de ─────────────────────────────────────────────────────────── */
+.wo-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.wo-head-left {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.wo-head-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.wo-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: 0;
+  font-size: var(--fs-page-title);
+  line-height: 1.2;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+}
+
+.wo-sub {
+  margin: 4px 0 0;
+  font-size: var(--fs-support);
+  color: var(--text-muted);
+}
+
+.wo-back {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wo-back:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* ── Loc ─────────────────────────────────────────────────────────────── */
+.wo-filters {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.wo-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-support);
+  color: var(--text-muted);
+}
+
+.wo-filter select,
+.wo-field select,
+.wo-field input,
+.wo-field textarea {
+  font: inherit;
+  font-size: var(--fs-body);
+  color: var(--text-primary);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: var(--r-md);
+  padding: 6px 10px;
+  min-width: 180px;
+}
+
+.wo-field textarea {
+  resize: vertical;
+  font-family: inherit;
+}
+
+.wo-filter select:focus-visible,
+.wo-field select:focus-visible,
+.wo-field input:focus-visible,
+.wo-field textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ── Bang ────────────────────────────────────────────────────────────── */
+.wo-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+}
+
+.wo-table-wrap-sm {
+  max-height: 320px;
+}
+
+.wo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-table);
+}
+
+.wo-table th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-size: 10.5px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+  white-space: nowrap;
+}
+
+.wo-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.wo-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.wo-table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.wo-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-table .mono {
+  font-family: var(--font-mono);
+}
+
+.wo-table .strong {
+  font-weight: 600;
+}
+
+.wo-empty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--sp-5) !important;
+}
+
+.wo-sku {
+  font-weight: 500;
+}
+
+.wo-unit {
+  color: var(--text-muted);
+}
+
+.wo-good {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.wo-ng {
+  color: var(--crit);
+  font-weight: 600;
+}
+
+.wo-sep {
+  color: var(--text-muted);
+  margin: 0 3px;
+}
+
+.wo-time span {
+  display: block;
+  white-space: nowrap;
+}
+
+.wo-time small {
+  color: var(--text-muted);
+  font-size: var(--fs-support);
+}
+
+.wo-row-actions {
+  text-align: right;
+}
+
+/* ── Badge trang thai ────────────────────────────────────────────────── */
+.wo-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.wo-badge-draft {
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  border-color: var(--border-default);
+}
+
+.wo-badge-released {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--kpi-accent-border);
+}
+
+.wo-badge-running {
+  background: var(--state-running-bg);
+  color: var(--state-running-fg);
+  border-color: var(--state-running);
+}
+
+.wo-badge-paused {
+  background: var(--mock-badge-bg);
+  color: var(--mock-badge-fg);
+  border-color: var(--mock-badge-border);
+}
+
+.wo-badge-done {
+  background: var(--state-running-bg);
+  color: var(--state-running-fg);
+  border-color: var(--state-running);
+}
+
+.wo-badge-cancelled {
+  background: var(--state-fault-bg);
+  color: var(--state-fault-fg);
+  border-color: var(--state-fault);
+}
+
+/* ── Tien do ─────────────────────────────────────────────────────────── */
+.wo-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wo-progress-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.wo-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    var(--grad-progress-from),
+    var(--grad-progress-to)
+  );
+  transition: width 0.4s ease;
+}
+
+.wo-progress-text {
+  font-size: var(--fs-support);
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 48px;
+  text-align: right;
+}
+
+.wo-progress-lg {
+  margin-top: var(--sp-3);
+}
+
+/* ── The card ────────────────────────────────────────────────────────── */
+.wo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--sp-3);
+  align-items: start;
+}
+
+.wo-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  padding: var(--sp-4);
+}
+
+.wo-card-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-card-title);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.wo-card-title small {
+  margin-left: auto;
+  font-size: var(--fs-support);
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.wo-empty-inline {
+  margin: 0;
+  padding: var(--sp-4) 0;
+  color: var(--text-muted);
+  font-size: var(--fs-body);
+  text-align: center;
+}
+
+/* ── OEE ─────────────────────────────────────────────────────────────── */
+.wo-oee-main {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.wo-oee-big {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: var(--r-lg);
+  background: var(--grad-oee-grad, var(--kpi-accent-grad));
+  min-width: 118px;
+}
+
+.wo-oee-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.wo-oee-big strong {
+  font-size: var(--fs-kpi);
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-oee-parts {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.wo-oee-part {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wo-oee-part span {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wo-oee-part strong {
+  font-size: 19px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-kv {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: var(--sp-2) var(--sp-3);
+  margin: var(--sp-3) 0 0;
+}
+
+.wo-kv div {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.wo-kv dt {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wo-kv dd {
+  margin: 0;
+  font-size: var(--fs-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── San luong ───────────────────────────────────────────────────────── */
+.wo-qty {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
+  gap: var(--sp-2);
+}
+
+.wo-qty-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  background: var(--bg-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.wo-qty-block span {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wo-qty-block strong {
+  font-size: 17px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-qty-good strong {
+  color: var(--ok);
+}
+
+.wo-qty-ng strong {
+  color: var(--crit);
+}
+
+/* ── Nhat ky ─────────────────────────────────────────────────────────── */
+.wo-log {
+  margin-top: var(--sp-3);
+  max-height: 260px;
+  overflow-y: auto;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.wo-log-row {
+  display: grid;
+  grid-template-columns: 96px 68px 1fr auto;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-support);
+}
+
+.wo-log-time {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wo-log-action {
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.4px;
+}
+
+.wo-log-transition {
+  color: var(--text-secondary);
+}
+
+.wo-log-by {
+  color: var(--text-muted);
+}
+
+/* ── Modal (A2) ──────────────────────────────────────────────────────── */
+.wo-modal-scrim {
+  position: fixed;
+  inset: 0;
+  background: var(--overlay-scrim);
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+  z-index: 60;
+}
+
+.wo-modal {
+  width: min(660px, 100%);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lg, 0 20px 48px #0f172a33);
+  overflow: hidden;
+}
+
+.wo-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.wo-modal-head h2 {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-size: var(--fs-section);
+  font-weight: 600;
+}
+
+.wo-modal-body {
+  padding: var(--sp-4);
+  overflow-y: auto;
+}
+
+.wo-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-2);
+  padding: var(--sp-3) var(--sp-4);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-raised);
+}
+
+.wo-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+
+.wo-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--fs-support);
+  color: var(--text-muted);
+}
+
+.wo-field-wide {
+  grid-column: 1 / -1;
+}
+
+.wo-field select,
+.wo-field input,
+.wo-field textarea {
+  min-width: 0;
+  width: 100%;
+}
+
+.wo-hint {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--accent-soft);
+  border: 1px solid var(--kpi-accent-border);
+  color: var(--text-secondary);
+  font-size: var(--fs-body);
+}
+
+.wo-hint-bar {
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  background: var(--mock-badge-bg);
+  border: 1px solid var(--mock-badge-border);
+  color: var(--mock-badge-fg);
+  font-size: var(--fs-body);
+}
+
+/* ── Loi ─────────────────────────────────────────────────────────────── */
+.wo-error {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  background: var(--state-fault-bg);
+  border: 1px solid var(--state-fault);
+  color: var(--state-fault-fg);
+  font-size: var(--fs-body);
+}

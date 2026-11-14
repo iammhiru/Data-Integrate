@@ -31,6 +31,7 @@ import {
   Moon,
   PanelLeftClose,
   PanelLeftOpen,
+  ClipboardList,
 } from "lucide-react";
 import { MACHINES } from "./catalog.gen";
 import { MockSource, type TelemetrySource } from "./telemetry-source";
@@ -41,14 +42,17 @@ import { PlantOverview } from "./pages/PlantOverview";
 import { LineView } from "./pages/LineView";
 import { MachineDetail } from "./pages/MachineDetail";
 import { AlarmCenter } from "./pages/AlarmCenter";
+import { WorkOrderList } from "./pages/WorkOrderList";
+import { WorkOrderExecution } from "./pages/WorkOrderExecution";
 import { UserMenu } from "./components/UserMenu";
 import { useTheme } from "./domain/use-theme";
 import { shiftLabel } from "./domain/shift";
 import "./tokens.css";
 import "./app.css";
+import "./work-order.css";
 
 /** Màn nền — luôn được render, không bị popup che xóa. */
-type Page = "plant" | "line" | "alarms";
+type Page = "plant" | "line" | "alarms" | "work-orders" | "wo-execution";
 
 /** Popup thiết bị đang mở (null = đóng). */
 type Drawer = { machineId: string; fromLine?: string } | null;
@@ -86,6 +90,8 @@ export default function MockApp() {
   const [drawer, setDrawer] = useState<Drawer>(null);
   const [connected, setConnected] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  /** WO đang mở ở màn thực thi (A3). */
+  const [execWoId, setExecWoId] = useState<string | null>(null);
   const { theme, toggle: toggleTheme } = useTheme();
 
   // Vòng cập nhật 1 Hz — tương đương SignalR push 1 snapshot/s.
@@ -164,9 +170,29 @@ export default function MockApp() {
   const navigate = useCallback((p: Page) => {
     setPage(p);
     setDrawer(null);
+    if (p !== "wo-execution") setExecWoId(null);
+  }, []);
+
+  /** Mở màn thực thi WO (A3). */
+  const openWoExecution = useCallback((woId: string) => {
+    setExecWoId(woId);
+    setPage("wo-execution");
+    setDrawer(null);
   }, []);
 
   const currentLine = page === "line" ? lineId : undefined;
+
+  /** Danh sách chuyền cho form tạo phiếu + lọc danh sách lệnh. */
+  const woLines = useMemo(
+    () =>
+      (master?.lines ?? []).map((l) => ({
+        lineId: l.lineId,
+        displayName: l.displayName,
+        sku: l.sku ?? null,
+        unit: l.unit ?? null,
+      })),
+    [master],
+  );
 
   return (
     <TelemetryContext.Provider value={store}>
@@ -218,6 +244,16 @@ export default function MockApp() {
             {page === "alarms" && (
               <AlarmCenter onBack={() => navigate("plant")} onOpenMachine={openMachine} />
             )}
+            {page === "work-orders" && (
+              <WorkOrderList
+                lines={woLines}
+                onBack={() => navigate("plant")}
+                onOpenExecution={openWoExecution}
+              />
+            )}
+            {page === "wo-execution" && execWoId && (
+              <WorkOrderExecution woId={execWoId} onBack={() => navigate("work-orders")} />
+            )}
           </main>
         </div>
 
@@ -252,6 +288,12 @@ function Sidebar({
   const items = [
     { key: "plant", icon: LayoutDashboard, label: "Tổng quan nhà máy", go: () => onNavigate("plant") },
     { key: "line", icon: Factory, label: "Dây chuyền", go: () => onOpenLine(lineId) },
+    {
+      key: "work-orders",
+      icon: ClipboardList,
+      label: "Lệnh sản xuất",
+      go: () => onNavigate("work-orders"),
+    },
     { key: "alarms", icon: Bell, label: "Alarm & Sự kiện", go: () => onNavigate("alarms") },
   ];
 

@@ -148,7 +148,8 @@ def _ratio(a, b):
 
 
 # =============================================================== KPI may (OEE / san luong)
-def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, reference_only: bool) -> list[dict]:
+def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, reference_only: bool,
+             wo_id: str | None = None) -> list[dict]:
     span_days = (w["to"] - w["from"]).total_seconds() / 86400
     hourly = span_days > MINUTE_TABLE_MAX_DAYS or bucket in ("1d",) and span_days > 1
     if hourly:
@@ -172,6 +173,40 @@ def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, 
         where.append("k.line_id = ANY(%(lids)s)"); params["lids"] = line_ids
     if reference_only:
         where.append("k.machine_id LIKE %(ref)s"); params["ref"] = REF_PATTERN
+
+    # ---- OEE theo Work Order: dung "actual window" chuan Vinamilk
+    # PlannedTime = actual_start_time -> (actual_end_time ?? now) cua lenh,
+    # KHONG dung cong thuc theo ca. Chi ap dung khi truy van theo WO.
+    wo_planned = None
+    wo_meta = None
+    if wo_id:
+        wrow = q("SELECT w.wo_id, w.wo_code, w.line_id, w.product_id, w.status, "
+                 "w.planned_qty, w.actual_start_time, w.actual_end_time, "
+                 "EXTRACT(EPOCH FROM (COALESCE(w.actual_end_time, now()) - w.actual_start_time)) AS planned_sec "
+                 "FROM work_order w WHERE w.wo_id = %(wo)s", {"wo": wo_id})
+        if not wrow:
+            raise HTTPException(404, f"khong tim thay work order {wo_id}")
+        wo_meta = wrow[0]
+        # CHI lay may thuoc chuyen cua lenh (1 chuyen = 1 lenh)
+        where.append("k.wo_id = %(wo)s"); params["wo"] = wo_id
+        where.append("k.line_id = %(wo_line)s"); params["wo_line"] = wo_meta["line_id"]
+        # planned_sec cua lenh = thoi gian chay thuc te
+        wo_planned = float(wo_meta.get("planned_sec") or 0)
+        # Cua so du lieu = dung khoang chay cua lenh (khong phai cua so tuy bien)
+        frm = wo_meta["actual_start_time"]
+        to = wo_meta["actual_end_time"] or datetime.now(timezone.utc)
+        params["frm"] = frm
+        params["to"] = to
+
+    planned_expr = (
+        f"least(sum({span})::float8, %(wo_planned)s)" if wo_planned is not None
+        else (f"sum(({span} - k.off_sec - k.maint_sec - k.nodata_sec)"
+              f" * coalesce((s.planned_minutes - s.planned_break_minutes)::float8"
+              f" / nullif(s.planned_minutes, 0), 1))::float8")
+    )
+    if wo_planned is not None:
+        params["wo_planned"] = wo_planned
+
     sql = f"""
         SELECT {dim_select}
           count(DISTINCT k.machine_id)::int                          AS machines,
@@ -180,9 +215,7 @@ def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, 
           sum(k.stopped_sec)::float8 AS stopped_sec, sum(k.faulted_sec)::float8 AS faulted_sec,
           sum(k.maint_sec)::float8 AS maint_sec, sum(k.off_sec)::float8 AS off_sec,
           sum(k.nodata_sec)::float8 AS nodata_sec,
-          sum(({span} - k.off_sec - k.maint_sec - k.nodata_sec)
-              * coalesce((s.planned_minutes - s.planned_break_minutes)::float8 / nullif(s.planned_minutes, 0), 1)
-             )::float8                                               AS planned_sec,
+          {planned_expr}                                             AS planned_sec,
           sum(k.stop_events)::bigint AS stop_events,
           sum(k.total_count)::bigint AS total_count, sum(k.good_count)::bigint AS good_count,
           sum(k.defect_count)::bigint AS defect_count, sum(k.ideal_time_sec)::float8 AS ideal_time_sec
@@ -222,37 +255,111 @@ def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, 
     return out
 
 
-@router.get("/oee", summary="OEE = A x P x Q theo may / line / plant / san pham / ca, co trend")
+@router.get("/oee", summary="OEE = A x P x Q theo may / line / plant / san pham / ca / work order, co trend")
 def oee(groupBy: GroupBy = "machine", bucket: Bucket | None = None,
         last: str | None = Query(None, description="vd 15m, 3h, 7d (mac dinh 1h)"),
         preset: Literal["today", "yesterday", "current_shift", "previous_shift"] | None = None,
         from_: datetime | None = Query(None, alias="from"), to: datetime | None = None,
         machineId: str | None = Query(None, description="danh sach, cach nhau dau phay"),
         lineId: str | None = Query(None, description="danh sach, cach nhau dau phay"),
+        woId: str | None = Query(None, description="tinh OEE cho 1 work order (planned = actual window)"),
         referenceOnly: bool | None = Query(None, description="mac dinh: true khi groupBy=line|plant")):
     w = resolve_window(last, preset, from_, to)
     ref = referenceOnly if referenceOnly is not None else groupBy in ("line", "plant")
-    items = kpi_rows(w, groupBy, bucket, _csv(machineId), _csv(lineId), ref)
-    return {"window": _window_doc(w), "groupBy": groupBy, "bucket": bucket, "referenceOnly": ref,
-            "formula": "A=run/planned, P=ideal/run, Q=good/total, OEE=A*P*Q", "items": items}
+    if woId:
+        # Truy van theo WO -> dung chinh xac khoang chay cua lenh, khong dung preset
+        ref = False
+    items = kpi_rows(w, groupBy, bucket, _csv(machineId), _csv(lineId), ref, woId)
+    out = {"window": _window_doc(w), "groupBy": groupBy, "bucket": bucket, "referenceOnly": ref,
+           "formula": "A=run/planned, P=ideal/run, Q=good/total, OEE=A*P*Q", "items": items}
+    if woId:
+        wo = q("SELECT wo_id, wo_code, line_id, product_id, status, planned_qty, "
+               "actual_start_time, actual_end_time FROM work_order WHERE wo_id = %(wo)s", {"wo": woId})
+        out["workOrder"] = wo[0] if wo else None
+        out["plannedTimeRule"] = "actual_start_time -> (actual_end_time ?? now) (chuẩn Vinamilk)"
+    return out
 
 
-@router.get("/production", summary="San luong / dat / loi / toc do theo may / line / san pham / ca, co trend")
+@router.get("/production", summary="San luong / dat / loi / toc do theo may / line / san pham / ca / work order")
 def production(groupBy: GroupBy = "line", bucket: Bucket | None = None, last: str | None = None,
                preset: Literal["today", "yesterday", "current_shift", "previous_shift"] | None = None,
                from_: datetime | None = Query(None, alias="from"), to: datetime | None = None,
                machineId: str | None = None, lineId: str | None = None,
+               woId: str | None = Query(None, description="san luong cua 1 work order"),
                referenceOnly: bool | None = Query(None, description="mac dinh: true khi groupBy=line|plant")):
     w = resolve_window(last, preset, from_, to)
     ref = referenceOnly if referenceOnly is not None else groupBy in ("line", "plant")
+    if woId:
+        ref = False
     keep = ("machine_id", "line_id", "product_id", "shift_date", "shift_id", "bucket", "machines", "counts",
             "rejectRate", "productionRatePerRunHour", "quality")
     items = [{k: v for k, v in it.items() if k in keep}
-             for it in kpi_rows(w, groupBy, bucket, _csv(machineId), _csv(lineId), ref)]
-    return {"window": _window_doc(w), "groupBy": groupBy, "bucket": bucket, "referenceOnly": ref, "items": items}
+             for it in kpi_rows(w, groupBy, bucket, _csv(machineId), _csv(lineId), ref, woId)]
+    out = {"window": _window_doc(w), "groupBy": groupBy, "bucket": bucket, "referenceOnly": ref, "items": items}
+    if woId:
+        wo = q("SELECT wo_id, wo_code, line_id, product_id, status, planned_qty, "
+               "actual_start_time, actual_end_time FROM work_order WHERE wo_id = %(wo)s", {"wo": woId})
+        out["workOrder"] = wo[0] if wo else None
+    return out
 
 
-# =============================================================== downtime
+@router.get("/wo/{wo_id}", summary="OEE + san luong cua 1 work order (planned = actual window)")
+def work_order_kpi(wo_id: str, groupBy: Literal["machine", "line"] = "machine"):
+    """Bao cao OEE cua mot lenh san xuat.
+
+    PlannedTime = actual_start_time -> (actual_end_time ?? now)  (chuẩn Vinamilk).
+    A = run_sec / planned_sec, P = ideal_time_sec / run_sec, Q = good / total.
+    """
+    wo = q("SELECT w.wo_id, w.wo_code, w.line_id, w.product_id, w.status, w.planned_qty, w.unit, "
+           "w.actual_start_time, w.actual_end_time, p.product_name, "
+           "EXTRACT(EPOCH FROM (COALESCE(w.actual_end_time, now()) - w.actual_start_time)) AS elapsed_sec "
+           "FROM work_order w LEFT JOIN product p ON p.product_id = w.product_id "
+           "WHERE w.wo_id = %(wo)s", {"wo": wo_id})
+    if not wo:
+        raise HTTPException(404, f"khong tim thay work order {wo_id}")
+    meta = wo[0]
+    if not meta["actual_start_time"]:
+        # Van tra du cung khop cau truc nhu khi da bat dau de frontend khong
+        # phai null-check tung field (tranh crash React khi render).
+        return {"workOrder": meta, "started": False, "items": [],
+                "oee": None, "availability": None, "performance": None, "quality": None,
+                "plannedSec": None, "progressRatio": None,
+                "counts": {"total": 0, "good": 0, "defect": 0, "reject": 0},
+                "time": {"runSec": 0.0, "stoppedSec": 0.0, "faultedSec": 0.0, "maintSec": 0.0},
+                "plannedTimeRule": "actual_start_time -> (actual_end_time ?? now) (chuan Vinamilk)",
+                "message": "lenh chua bat dau -> chua co OEE"}
+
+    w = {"from": meta["actual_start_time"], "to": meta["actual_end_time"] or datetime.now(timezone.utc)}
+    items = kpi_rows(w, groupBy, None, None, None, False, wo_id)
+    totals = q("SELECT sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
+               "sum(defect_count)::bigint AS defect, sum(run_sec)::float8 AS run_sec, "
+               "sum(stopped_sec)::float8 AS stopped_sec, sum(faulted_sec)::float8 AS faulted_sec, "
+               "sum(maint_sec)::float8 AS maint_sec, sum(ideal_time_sec)::float8 AS ideal_sec "
+               "FROM machine_kpi_1m WHERE wo_id = %(wo)s", {"wo": wo_id})
+    t = totals[0] if totals else {}
+    planned_sec = float(meta.get("elapsed_sec") or 0)
+    run = float(t.get("run_sec") or 0)
+    total = int(t.get("total") or 0)
+    good = int(t.get("good") or 0)
+    a = _ratio(run, planned_sec)
+    p = _ratio(float(t.get("ideal_sec") or 0), run) if run else None
+    qq = _ratio(good, total)
+    return {
+        "workOrder": meta,
+        "started": True,
+        "items": items,
+        "oee": round(a * p * qq, 4) if None not in (a, p, qq) else None,
+        "availability": a, "performance": p, "quality": qq,
+        "plannedTimeRule": "actual_start_time -> (actual_end_time ?? now) (chuẩn Vinamilk)",
+        "plannedSec": round(planned_sec, 1),
+        "counts": {"total": total, "good": good, "defect": int(t.get("defect") or 0),
+                   "reject": max(total - good, 0)},
+        "progressRatio": _ratio(total, meta.get("planned_qty")),
+        "time": {"runSec": round(run, 1),
+                 "stoppedSec": round(float(t.get("stopped_sec") or 0), 1),
+                 "faultedSec": round(float(t.get("faulted_sec") or 0), 1),
+                 "maintSec": round(float(t.get("maint_sec") or 0), 1)},
+    }
 STATES = ["NO_DATA", "OFF", "STARTING", "RUNNING", "STOPPED", "FAULTED", "MAINTENANCE"]
 
 
