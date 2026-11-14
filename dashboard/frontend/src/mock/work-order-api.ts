@@ -85,6 +85,12 @@ export type WoOee = {
   performance: number | null;
   quality: number | null;
   plannedSec: number | null;
+  /** Mẫu số thật của Availability (đã clamp theo data_until của batch). */
+  plannedSecData?: number | null;
+  /** Mốc thời gian batch đã tính đến (ISO). */
+  dataUntil?: string | null;
+  /** Độ trễ (giây) giữa batch và hiện tại. */
+  lagSec?: number | null;
   progressRatio: number | null;
   counts?: { total: number; good: number; defect: number; reject: number };
   time?: { runSec: number; stoppedSec: number; faultedSec: number; maintSec: number };

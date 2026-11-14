@@ -30,6 +30,7 @@ import {
   KpiCard,
   SourceBadge,
   StatusBadge,
+  BatchFreshnessBadge,
   fmtInt,
 } from "../components/common";
 
@@ -111,15 +112,8 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
         </div>
         <div className="head-right">
           <SourceBadge kind={source.kind} />
-          {/* Badge nguồn KPI — OEE đọc từ PostgreSQL (batch), cập nhật 1 phút. */}
-          {dashboard && (
-            <span
-              className="mock-badge live"
-              title={`OEE/A/P/Q đọc từ PostgreSQL (machine_kpi_1m) · tính theo Work Order đang chạy · cập nhật mỗi 1 phút · dữ liệu đến ${dashboard.dataUntil ?? "—"}`}
-            >
-              PG
-            </span>
-          )}
+          {/* Badge độ tươi dữ liệu KPI — OEE đọc từ PostgreSQL (batch layer). */}
+          <BatchFreshnessBadge dataUntil={dashboard?.dataUntil} lagSec={dashboard?.lagSec} />
         </div>
       </header>
 

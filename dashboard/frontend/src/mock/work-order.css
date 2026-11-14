@@ -521,6 +521,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Ghi chú minh bạch độ trễ của lớp batch (OEE tính theo data_until). */
+.wo-kv-note {
+  margin: var(--sp-3) 0 0;
+  padding-top: var(--sp-2);
+  border-top: 1px dashed var(--border-subtle);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
 /* ── San luong ───────────────────────────────────────────────────────── */
 .wo-qty {
   display: grid;

@@ -67,6 +67,31 @@ Cửa sổ: `last=15m|3h|7d` (mặc định 1h) · `preset=today|yesterday|curre
 `window.dataUntil` và `window.partial` (cửa sổ vượt quá phần batch đã tính).
 OEE line/plant chỉ tính trên máy tham chiếu (`REF_MACHINE_PATTERN=%FILLER%`), `referenceOnly=false` để cộng tất cả.
 
+### PlannedTime của Work Order — clamp theo `data_until`
+
+Khi OEE tính **theo Work Order** (`/dashboard`, `/wo/{wo_id}`):
+
+```
+PlannedTime = actual_start_time → (actual_end_time ?? min(now, batch_freshness.data_until))
+A = run_sec(máy tham chiếu) / PlannedTime
+```
+
+⚠ **Vì sao clamp theo `data_until`:** batch KPI chạy vòng lặp ~5 phút và cố tình bỏ qua
+3 phút cuối (`--delay-min 3`) → PG chỉ có dữ liệu tới `data_until` (trễ ~5–7 phút).
+Nếu PlannedTime lấy `now()` (wall-clock) mà tử số `run_sec` lấy từ PG thì phần thời gian
+batch **chưa tính** bị quy về thành **DỪNG máy** → Availability tụt về ~33 % với lệnh mới
+chạy vài phút (quan sát: `WO-261114-0001`). Đó là sai số liệu, không phải thực tế.
+
+Sau khi clamp: OEE luôn **đúng** cho mốc thời gian nó đại diện, và ổn định (không còn
+hiện tượng "tụt rồi hồi" sau mỗi lần batch chạy). Hệ quả: OEE trên UI mang độ trễ bằng
+độ trễ batch — độ trễ này được phản ánh minh bạch qua `dataUntil` / `lagSec` (UI hiển thị
+badge "PG · trễ Np"). Xem `_wo_planned_sec()` trong `services/state-api/analytics.py`.
+
+Hai trường được trả về:
+* `plannedSec` — thời gian chạy wall-clock (dùng để hiển thị "chạy …").
+* `plannedSecData` — mẫu số **thật** của Availability (đã clamp).
+
+
 ## SQL gốc — luôn SUM rồi mới chia (không lấy trung bình của tỷ lệ)
 
 ```sql

@@ -58,6 +58,8 @@ export type DashboardLine = {
   performance: number | null;
   quality: number | null;
   plannedSec: number | null;
+  /** Mẫu số thật của Availability (đã clamp theo data_until của batch). */
+  plannedSecData?: number | null;
   counts: DashboardCounts | null;
   progressRatio: number | null;
 };
@@ -110,6 +112,7 @@ type RawDashboard = {
     performance: number | null;
     quality: number | null;
     plannedSec: number | null;
+    plannedSecData?: number | null;
     counts: DashboardCounts | null;
     progressRatio: number | null;
   }>;
@@ -147,6 +150,7 @@ export async function loadDashboard(signal?: AbortSignal): Promise<Dashboard | n
         performance: l.performance,
         quality: l.quality,
         plannedSec: l.plannedSec,
+        plannedSecData: l.plannedSecData,
         counts: l.counts,
         progressRatio: l.progressRatio,
       })),

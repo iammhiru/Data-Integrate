@@ -259,7 +259,7 @@ export function WorkOrderExecution({ woId, onBack }: WorkOrderExecutionProps) {
         <section className="wo-card">
           <h3 className="wo-card-title">
             <Gauge size={15} /> OEE của lệnh
-            <small>PlannedTime = actual_start → (actual_end ?? now)</small>
+            <small>PlannedTime = actual_start → (actual_end ?? min(now, data_until))</small>
           </h3>
           {oee?.started ? (
             <>
@@ -301,6 +301,19 @@ export function WorkOrderExecution({ woId, onBack }: WorkOrderExecutionProps) {
                   <dd>{fmtDuration(time.maintSec)}</dd>
                 </div>
               </dl>
+              {/*
+                ⚠ Minh bạch độ trễ: OEE của lớp batch LUÔN trễ vài phút so với
+                thực tế (batch KPI chạy ~5 phút/lần + bỏ qua 3 phút cuối).
+                PlannedTime được clamp theo `data_until` nên con số luôn ĐÚNG
+                cho mốc nó đại diện — nhưng người dùng cần biết mốc đó là lúc nào.
+              */}
+              <p className="wo-kv-note">
+                Dữ liệu tính đến {fmtTime(oee.dataUntil)}
+                {oee.lagSec != null ? ` (trễ ~${Math.round(oee.lagSec / 60)} phút so với hiện tại)` : ""}
+                {oee.plannedSecData != null && oee.plannedSec != null && oee.plannedSecData < oee.plannedSec
+                  ? ` · PlannedTime tính trên ${fmtDuration(oee.plannedSecData)} đã có dữ liệu (lệnh đang chạy ${fmtDuration(oee.plannedSec)})`
+                  : ""}
+              </p>
             </>
           ) : (
             <p className="wo-empty-inline">

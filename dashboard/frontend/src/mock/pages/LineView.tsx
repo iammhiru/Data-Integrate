@@ -48,6 +48,7 @@ import {
   SourceBadge,
   StatusBadge,
   StatusDot,
+  BatchFreshnessBadge,
   fmtInt,
   fmtNum,
 } from "../components/common";
@@ -147,15 +148,8 @@ export function LineView({
             onSelect={(id) => onSelectLine?.(id)}
           />
           <SourceBadge kind={source.kind} />
-          {/* Badge nguồn KPI — OEE đọc từ PostgreSQL (batch), cập nhật 1 phút. */}
-          {dashboard && (
-            <span
-              className="mock-badge live"
-              title={`OEE/A/P/Q đọc từ PostgreSQL (machine_kpi_1m) · tính theo Work Order đang chạy · cập nhật mỗi 1 phút · dữ liệu đến ${dashboard.dataUntil ?? "—"}`}
-            >
-              PG
-            </span>
-          )}
+          {/* Badge độ tươi dữ liệu KPI — OEE đọc từ PostgreSQL (batch layer). */}
+          <BatchFreshnessBadge dataUntil={dashboard?.dataUntil} lagSec={dashboard?.lagSec} />
           <ConnectionBadge connection={connection} />
           <StatusBadge status={status} size="md" />
         </div>

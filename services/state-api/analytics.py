@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import re
 from datetime import datetime, time, timedelta, timezone
+from time import monotonic
 from typing import Any, Literal
 from zoneinfo import ZoneInfo
 
@@ -165,6 +166,75 @@ def _csv(v: str | None) -> list[str] | None:
     return [x.strip() for x in v.split(",") if x.strip()] if v else None
 
 
+_DATA_UNTIL_TTL = 5.0          # giây — cache nhẹ, tránh gọi DB mỗi dòng dashboard
+_data_until_cache: tuple[float, datetime | None] | None = None
+
+
+def _data_until() -> datetime | None:
+    """Mốc thời gian batch đã tính đến (batch_freshness.data_until) — None nếu chưa có batch nào thành công."""
+    global _data_until_cache
+    now = monotonic()
+    if _data_until_cache and now - _data_until_cache[0] < _DATA_UNTIL_TTL:
+        return _data_until_cache[1]
+    rows = q("SELECT data_until FROM batch_freshness")
+    val = rows[0]["data_until"] if rows else None
+    _data_until_cache = (now, val)
+    return val
+
+
+def _floor_minute(dt: datetime) -> datetime:
+    return dt.replace(second=0, microsecond=0)
+
+
+def _ceil_minute(dt: datetime) -> datetime:
+    f = _floor_minute(dt)
+    return f if f == dt else f + timedelta(minutes=1)
+
+
+def _wo_planned_sec(start: datetime | None, end: datetime | None) -> float:
+    """PlannedTime của work order — KHÔNG vượt quá mốc dữ liệu đã có trong PG.
+
+    ⚠ VÌ SAO PHẢI CLAMP THEO `data_until`:
+        Batch KPI chạy vòng lặp mỗi ~5 phút (`BATCH_INTERVAL_SEC=300`) và cố
+        tình bỏ qua 3 phút cuối (`--delay-min 3`) để chờ raw-ingest ghi xong
+        → dữ liệu trong PG chỉ có tới `batch_freshness.data_until`
+        (trễ khoảng 5–7 phút so với thực tế).
+
+        Trước đây: PlannedTime lấy `now()` (wall-clock) còn tử số `run_sec`
+        lấy từ PG → phần thời gian batch CHƯA tính bị quy về thành DỪNG máy
+        → Availability tụt về ~33% với lệnh mới chạy vài phút
+        (quan sát: WO-261114-0001). Đó là SAI, không phải thực tế.
+
+        Sau khi clamp: OEE luôn được tính trên ĐÚNG khoảng thời gian mà dữ
+        liệu đã có → chính xác và ổn định (không còn "tụt rồi hồi" sau mỗi
+        lần batch chạy). Hệ quả: OEE trên UI mang độ trễ bằng độ trễ batch —
+        độ trễ này đã được phản ánh minh bạch qua `lagSec` / `dataUntil`.
+
+    ⚠ VÌ SAO CĂN THEO BUCKET PHÚT:
+        Fact table `machine_kpi_1m` gán `wo_id` theo điều kiện
+        `ts_minute >= actual_start_time` (xem `wo_assignment` trong
+        `spark/apps/batch_kpi.py`) → phút chứa giây bắt đầu lệnh KHÔNG được
+        gán cho lệnh (VD bắt đầu 02:59:33 → bucket 02:59 bị bỏ).
+
+        Nếu mẫu số vẫn tính từ 02:59:33 thì nó bao gồm 27 s không có trong tử
+        số → A = 60/87 = 69% dù máy chạy liên tục. Đây cũng là SAI.
+
+        → Mẫu số phải bám đúng các BUCKET PHÚT mà fact table thực sự gán:
+          bắt đầu = ceil_minute(actual_start_time), kết thúc = min(now,
+          data_until) (đã là ranh giới phút) hoặc actual_end_time.
+    """
+    if not start:
+        return 0.0
+    wall_end = end or datetime.now(timezone.utc)
+    fresh = _data_until()
+    # data_until có thể LỚN HƠN wall_end (batch đã tính trước khi lệnh kết thúc) → lấy min.
+    eff_end = min(wall_end, fresh) if fresh else wall_end
+    # Căn về bucket phút của fact table: bỏ phần lẻ không được gán vào lệnh.
+    start_b = _ceil_minute(start)
+    end_b = _floor_minute(eff_end)
+    return max(0.0, (end_b - start_b).total_seconds())
+
+
 def _ratio(a, b):
     return round(a / b, 4) if a is not None and b else None
 
@@ -219,7 +289,7 @@ def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, 
         where.append("k.machine_id LIKE %(ref)s"); params["ref"] = REF_PATTERN
 
     # ---- OEE theo Work Order: dung "actual window" chuan Vinamilk
-    # PlannedTime = actual_start_time -> (actual_end_time ?? now) cua lenh,
+    # PlannedTime = actual_start_time -> (actual_end_time ?? min(now, data_until)) cua lenh,
     # KHONG dung cong thuc theo ca. Chi ap dung khi truy van theo WO.
     wo_planned = None
     wo_meta = None
@@ -234,8 +304,12 @@ def kpi_rows(w: dict, group_by: str, bucket: str | None, machine_ids, line_ids, 
         # CHI lay may thuoc chuyen cua lenh (1 chuyen = 1 lenh)
         where.append("k.wo_id = %(wo)s"); params["wo"] = wo_id
         where.append("k.line_id = %(wo_line)s"); params["wo_line"] = wo_meta["line_id"]
-        # planned_sec cua lenh = thoi gian chay thuc te
-        wo_planned = float(wo_meta.get("planned_sec") or 0)
+        # planned_sec cua lenh = thoi gian chay thuc te (CLAMP theo data_until —
+        # batch KPI tru ~5-7 phut; xem `_wo_planned_sec`).
+        # LUU Y: ben duoi la `least(sum(span), wo_planned)` — `sum(span)` chi dem
+        # cac phut THUC SU co trong PG (tu dong den <= data_until) nen da clamp
+        # sẵn theo data_until. Wo_planned them mot lan nua cho chắc.
+        wo_planned = _wo_planned_sec(wo_meta["actual_start_time"], wo_meta["actual_end_time"])
         # Cua so du lieu = dung khoang chay cua lenh (khong phai cua so tuy bien)
         frm = wo_meta["actual_start_time"]
         to = wo_meta["actual_end_time"] or datetime.now(timezone.utc)
@@ -351,8 +425,10 @@ def production(groupBy: GroupBy = "line", bucket: Bucket | None = None, last: st
 def work_order_kpi(wo_id: str, groupBy: Literal["machine", "line"] = "machine"):
     """Bao cao OEE cua mot lenh san xuat.
 
-    PlannedTime = actual_start_time -> (actual_end_time ?? now)  (chuẩn Vinamilk).
+    PlannedTime = actual_start_time -> (actual_end_time ?? min(now, data_until))  (chuẩn Vinamilk).
     A = run_sec / planned_sec, P = ideal_time_sec / run_sec, Q = good / total.
+    ⚠ PlannedTime được clamp theo `batch_freshness.data_until` (xem `_wo_planned_sec`) —
+      tránh tính nhầm phần thời gian batch chưa có dữ liệu là DỪNG máy.
     """
     wo = q("SELECT w.wo_id, w.wo_code, w.line_id, w.product_id, w.status, w.planned_qty, w.unit, "
            "w.actual_start_time, w.actual_end_time, p.product_name, "
@@ -396,22 +472,27 @@ def work_order_kpi(wo_id: str, groupBy: Literal["machine", "line"] = "machine"):
                 {"line": meta["line_id"], "types": REF_MACHINE_TYPES, "ref": REF_PATTERN})
     ref_machine = ref_row[0]["machine_id"] if ref_row else None
 
-    totals = q("SELECT sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
+    totals = q("SELECT count(*)::int AS n_min, sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
                "sum(defect_count)::bigint AS defect, sum(run_sec)::float8 AS run_sec, "
                "sum(stopped_sec)::float8 AS stopped_sec, sum(faulted_sec)::float8 AS faulted_sec, "
                "sum(maint_sec)::float8 AS maint_sec, sum(ideal_time_sec)::float8 AS ideal_sec "
                "FROM machine_kpi_1m WHERE wo_id = %(wo)s AND machine_id = %(ref)s",
                {"wo": wo_id, "ref": ref_machine})
     t = totals[0] if totals else {}
-    planned_sec = float(meta.get("elapsed_sec") or 0)
+    elapsed_sec = float(meta.get("elapsed_sec") or 0)            # wall-clock, để HIỂN THỊ
+    planned_sec = _wo_planned_sec(meta.get("actual_start_time"), meta.get("actual_end_time"))
     run = float(t.get("run_sec") or 0)
     total = int(t.get("total") or 0)
     good = int(t.get("good") or 0)
     # ⚠ good > total là dữ liệu lỗi (counter lệch) → chặn, không hiện Q > 100%.
     good = min(good, total) if total > 0 else good
-    a = _ratio_c(run, planned_sec)
+    # ⚠ Lệnh mới chưa có phút dữ liệu nào → A = None (hiển thị "—"), không phải 0%.
+    has_data = int(t.get("n_min") or 0) > 0
+    a = _ratio_c(run, planned_sec) if (planned_sec and has_data) else None
     p = _ratio_c(float(t.get("ideal_sec") or 0), run) if run else None
-    qq = _ratio_c(good, total)
+    qq = _ratio_c(good, total) if total else None
+    fresh = _data_until()
+    lag = (datetime.now(timezone.utc) - fresh).total_seconds() if fresh else None
     return {
         "workOrder": meta,
         "started": True,
@@ -419,8 +500,13 @@ def work_order_kpi(wo_id: str, groupBy: Literal["machine", "line"] = "machine"):
         "referenceMachine": ref_machine,
         "oee": round(a * p * qq, 4) if None not in (a, p, qq) else None,
         "availability": a, "performance": p, "quality": qq,
-        "plannedTimeRule": "actual_start_time -> (actual_end_time ?? now) (chuẩn Vinamilk)",
-        "plannedSec": round(planned_sec, 1),
+        "plannedTimeRule": "actual_start_time -> (actual_end_time ?? min(now, data_until)) (chuẩn Vinamilk)",
+        # plannedSec = thời gian chạy wall-clock (hiển thị "chạy ...").
+        # plannedSecData = mẫu số THẬT của Availability (đã clamp theo data_until).
+        "plannedSec": round(elapsed_sec, 1),
+        "plannedSecData": round(planned_sec, 1),
+        "dataUntil": fresh,
+        "lagSec": round(lag, 1) if lag is not None else None,
         "counts": {"total": total, "good": good, "defect": int(t.get("defect") or 0),
                    "reject": max(total - good, 0)},
         "progressRatio": _ratio(total, meta.get("planned_qty")),
@@ -613,15 +699,20 @@ def _reference_machine(line_id: str) -> str | None:
 def _wo_kpi_for(wo: dict, ref_machine: str | None) -> dict:
     """Tính A/P/Q/OEE của 1 work order trên MÁY THAM CHIẾU.
 
-    PlannedTime = actual_start_time -> (actual_end_time ?? now)  (chuẩn Vinamilk)
+    PlannedTime = actual_start_time -> (actual_end_time ?? min(now, data_until))  (chuẩn Vinamilk)
         A = run_sec(ref) / planned_sec(lenh)
         P = ideal_time_sec(ref) / run_sec(ref)
         Q = good_count(ref) / total_count(ref)
+
+    ⚠ PlannedTime được CLAMP theo `batch_freshness.data_until` (xem `_wo_planned_sec`):
+        batch KPI trễ ~5–7 phút, nếu lấy `now()` làm mẫu số thì phần chưa có dữ
+        liệu bị tính như DỪNG máy → Availability tụt về ~33% với lệnh mới chạy.
     """
     wo_id = wo["wo_id"]
-    planned_sec = float(wo.get("elapsed_sec") or 0)
+    elapsed_sec = float(wo.get("elapsed_sec") or 0)          # wall-clock, để HIỂN THỊ
+    planned_sec = _wo_planned_sec(wo.get("actual_start_time"), wo.get("actual_end_time"))
     params = {"wo": wo_id, "ref": ref_machine}
-    rows = q("SELECT sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
+    rows = q("SELECT count(*)::int AS n_min, sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
              "sum(defect_count)::bigint AS defect, sum(run_sec)::float8 AS run_sec, "
              "sum(stopped_sec)::float8 AS stopped_sec, sum(faulted_sec)::float8 AS faulted_sec, "
              "sum(maint_sec)::float8 AS maint_sec, sum(ideal_time_sec)::float8 AS ideal_sec "
@@ -632,13 +723,19 @@ def _wo_kpi_for(wo: dict, ref_machine: str | None) -> dict:
     good = int(t.get("good") or 0)
     # ⚠ good > total là dữ liệu lỗi (counter lệch) → chặn, không hiện Q > 100%.
     good = min(good, total) if total > 0 else good
-    a = _ratio_c(run, planned_sec) if planned_sec else None
+    # ⚠ Lệnh mới chưa có phút dữ liệu nào (batch chưa kịp tính) → A = None
+    #   (hiển thị "—"), KHÔNG phải 0% (0% là "máy dừng" — sai lệch thuật ngữ).
+    has_data = int(t.get("n_min") or 0) > 0
+    a = _ratio_c(run, planned_sec) if (planned_sec and has_data) else None
     p = _ratio_c(float(t.get("ideal_sec") or 0), run) if run else None
-    qq = _ratio_c(good, total)
+    qq = _ratio_c(good, total) if total else None
     return {
         "oee": round(a * p * qq, 4) if None not in (a, p, qq) else None,
         "availability": a, "performance": p, "quality": qq,
-        "plannedSec": round(planned_sec, 1),
+        # plannedSec = thời gian chạy wall-clock (dùng để HIỂN THỊ "chạy ...").
+        # plannedSecData = mẫu số THẬT của Availability (đã clamp theo data_until).
+        "plannedSec": round(elapsed_sec, 1),
+        "plannedSecData": round(planned_sec, 1),
         "counts": {"total": total, "good": good, "defect": int(t.get("defect") or 0),
                    "reject": max(total - good, 0)},
         "progressRatio": _ratio(total, wo.get("planned_qty")),

@@ -241,6 +241,51 @@ export function SourceBadge({ kind }: { kind: "mock" | "live" }) {
 /** Tương thích ngược — mặc định là MOCK. */
 export const MockBadge = () => <SourceBadge kind="mock" />;
 
+// ── Badge độ tươi dữ liệu batch (KPI OEE) ─────────────────────────────────
+/**
+ * Hiển thị độ trễ của lớp BATCH (OEE đọc từ PostgreSQL `machine_kpi_1m`).
+ *
+ * ⚠ VÌ SAO CẦN:
+ *     Batch KPI chạy vòng lặp ~5 phút và cố tình bỏ qua 3 phút cuối → OEE
+ *     trên UI LUÔN mang độ trễ vài phút so với thực tế. Đây là đặc tính bình
+ *     thường của lớp Data Warehouse, KHÔNG phải lỗi. Nhưng nếu không nói ra
+ *     thì người dùng tưởng số liệu "đứng yên" là hệ thống bị treo.
+ *
+ *     → Badge hiện độ trễ thật + tooltip giải thích cơ chế.
+ */
+export function BatchFreshnessBadge({
+  dataUntil,
+  lagSec,
+}: {
+  dataUntil: string | null | undefined;
+  lagSec: number | null | undefined;
+}) {
+  if (!dataUntil) {
+    return (
+      <span className="mock-badge" title="Chưa có dữ liệu batch (PostgreSQL) — OEE chưa sẵn sàng">
+        PG —
+      </span>
+    );
+  }
+  const lagMin = lagSec != null ? Math.max(0, Math.round(lagSec / 60)) : null;
+  const at = new Date(dataUntil);
+  const atHm = Number.isNaN(at.getTime())
+    ? "—"
+    : at.toLocaleTimeString("vi-VN", { hour12: false, hour: "2-digit", minute: "2-digit" });
+  return (
+    <span
+      className="mock-badge live"
+      title={
+        `OEE/A/P/Q đọc từ PostgreSQL (machine_kpi_1m) — batch layer, tính theo Work Order đang chạy.\n` +
+        `Dữ liệu đã tính đến ${atHm} (${lagMin != null ? `trễ ${lagMin} phút` : "—"}) so với hiện tại.\n` +
+        `Batch KPI chạy mỗi ~5 phút và bỏ qua 3 phút cuối để chờ dữ liệu ghi xong → độ trễ này là bình thường.`
+      }
+    >
+      PG{lagMin != null ? ` · trễ ${lagMin}p` : ""}
+    </span>
+  );
+}
+
 // ── Định dạng ────────────────────────────────────────────────────────────
 const nf = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
 const nf0 = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 });
