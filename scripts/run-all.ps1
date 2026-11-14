@@ -1,18 +1,38 @@
-﻿# Chay TOAN BO pipeline (khong Docker) tren Windows, chay nen.
+﻿# ============================================================================
+#  CHAY TOAN BO PIPELINE (khong Docker) tren Windows, chay nen.
 #
-#   .\scripts\run-all.ps1                # middleware o che do SIMULATION (co du lieu lien tuc)
-#   .\scripts\run-all.ps1 -RealKepware   # middleware doc Kepware that (chi dung khi gia tri tag doi)
+#   .\scripts\run-all.ps1 -Mode Simulation   # middleware gia lap (SIMULATION_MODE=true)
+#   .\scripts\run-all.ps1 -Mode Real         # middleware doc Kepware that (SIMULATION_MODE=false)
+#   .\scripts\run-all.ps1 -Mode Simulation -SkipSpark   # bo Spark local (mac dinh: BO)
 #
-# Chuoi du lieu:
-#   Middleware -> Kafka `industrial.telemetry` -> Spark -> Kafka `machine-state` (compact)
-#              -> state-api (FastAPI :8000) -> WebSocket -> Frontend (Vite :5173)
+#  ⚠ MAC DINH -SkipSpark = TRUE:
+#    Spark da chay trong Docker tren server 192.168.179.176
+#    (spark-raw-ingest / spark-machine-state / spark-batch-kpi).
+#    Chay them Spark local se bi 2 job ghi cung topic `machine-state` ->
+#    gia tri trong UI nhay nhay. Dung -SkipSpark:$false neu muon chay local
+#    (chi khi server chua co Spark).
 #
-# Master data (dong chay, SKU, work order, ke hoach) -> master-api (:8001) -> Frontend
+#  Chuoi du lieu:
+#    Middleware -> Kafka `industrial.telemetry` -> [Spark tren server] ->
+#    Kafka `machine-state` (compacted) -> state-api (FastAPI :8000) ->
+#    WebSocket -> Frontend (Vite :5173)
 #
-# Kafka: cluster that 192.168.179.176:29092 (KAFKA_BROKERS trong .env)
+#  Master data (dong chay, SKU, work order, ke hoach) -> master-api (:8001) -> Frontend
+#
+#  Kafka: cluster that 192.168.179.176:29092 (KAFKA_BROKERS trong .env)
+#
+#  Script chuyen rieng (de doc):
+#    .\scripts\run-sim.ps1    # gia lap, khong Spark
+#    .\scripts\run-real.ps1   # Kepware that, khong Spark
+# ============================================================================
 param(
-    [switch]$RealKepware,
-    [switch]$NoFrontend
+    [ValidateSet("Simulation", "Real")]
+    [string]$Mode = "Simulation",
+    [switch]$NoFrontend,
+    # -SkipSpark:$false -> CHAY Spark local tren may nay (mac dinh: KHONG chay).
+    [switch]$SkipSpark = $true,
+    [double]$SpeedFactor = 1.0,
+    [double]$FaultRate = 0.01
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,32 +62,35 @@ function Stop-Step {
 }
 
 # --- Dung phien ban cu (neu co) ---
+Write-Host "`n=== [0/4] Dung phien cu ===" -ForegroundColor Yellow
 Stop-Step "*machine_state_stream.py*"
+Stop-Step "*raw_ingest.py*"
+Stop-Step "*batch_kpi.py*"
 Stop-Step "*IndustrialTelemetry.Middleware*main.py*"
 Stop-Step "*uvicorn app:app*"
 
-Write-Host "`n=== [0/4] Tao topic `machine-state` ===" -ForegroundColor Yellow
+Write-Host "`n=== [0b/4] Tao topic `machine-state` ===" -ForegroundColor Yellow
 & (Join-Path $Root ".venv\Scripts\python.exe") (Join-Path $Scripts "kafka_create_topics.py")
 
-Write-Host "`n=== [1/4] Spark Structured Streaming ===" -ForegroundColor Yellow
-Start-Step "spark" "run-spark.ps1"
-Start-Sleep -Seconds 40
+if ($SkipSpark) {
+    Write-Host "`n=== [1/4] Spark: BO QUA (dang chay tren server 192.168.179.176) ===" -ForegroundColor DarkGray
+} else {
+    Write-Host "`n=== [1/4] Spark Structured Streaming (LOCAL tren may nay) ===" -ForegroundColor Yellow
+    Start-Step "spark" "run-spark.ps1"
+    Start-Sleep -Seconds 40
+}
 
 Write-Host "`n=== [2/4] state-api (:8000) ===" -ForegroundColor Yellow
 Start-Step "state-api" "run-state-api.ps1"
-Start-Sleep -Seconds 20
+Start-Sleep -Seconds 15
 
-Write-Host "`n=== [2b/4] master-api (:8001) — master data ===" -ForegroundColor Yellow
+Write-Host "`n=== [2b/4] master-api (:8001) — master data + Work Order ===" -ForegroundColor Yellow
 Start-Step "master-api" "run-master-api.ps1"
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 8
 
-Write-Host "`n=== [3/4] Middleware ===" -ForegroundColor Yellow
-if ($RealKepware) {
-    Start-Step "middleware" "run-middleware.ps1"
-} else {
-    Start-Step "middleware" "run-middleware.ps1" @("-Simulation")
-}
-Start-Sleep -Seconds 35
+Write-Host "`n=== [3/4] Middleware (Mode=$Mode) ===" -ForegroundColor Yellow
+Start-Step "middleware" "run-middleware.ps1" @("-Mode", $Mode, "-SpeedFactor", "$SpeedFactor", "-FaultRate", "$FaultRate")
+Start-Sleep -Seconds 30
 
 if (-not $NoFrontend) {
     Write-Host "`n=== [4/4] Frontend Vite (:5173) ===" -ForegroundColor Yellow
@@ -99,4 +122,4 @@ try {
 }
 Write-Host "  Frontend  :5173  -> http://127.0.0.1:5173/?source=live" -ForegroundColor Green
 Write-Host "  state-api :8000  -> http://127.0.0.1:8000/docs" -ForegroundColor Green
-Write-Host "`nLog: $Logs\{spark,state-api,middleware}.err" -ForegroundColor DarkGray
+Write-Host "`nLog: $Logs\{state-api,master-api,middleware}.err" -ForegroundColor DarkGray

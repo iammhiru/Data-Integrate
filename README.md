@@ -47,6 +47,32 @@ curl http://localhost:8000/health
 
 Mở **http://localhost:5080** — UI MES (dữ liệu realtime). Thêm `?source=mock` để xem dữ liệu giả lập trong trình duyệt.
 
+### Chạy native trên Windows (không Docker)
+
+Khi hạ tầng (Kafka / PostgreSQL / MinIO / Spark) đã nằm trên máy server `192.168.179.176`:
+
+```powershell
+cd E:\Work\SFSVcongty\Laird\Code\Data-Integrate
+
+.\scripts\run-sim.ps1     # ① GIẢ LẬP — không cần Kepware, dữ liệu liên tục
+.\scripts\run-real.ps1    # ② THẬT   — đọc Kepware qua OPC UA
+```
+
+Cả hai script khởi động: **state-api (:8000) → master-api (:8001) → middleware → frontend Vite (:5173)**.
+Log: `Data-Integrate\logs\{state-api,master-api,middleware}.{out,err}`.
+
+> ⚠ **Spark không chạy trên máy Windows** — đã chạy trong Docker trên server
+> (`spark-raw-ingest` / `spark-machine-state` / `spark-batch-kpi`). Chạy thêm Spark local
+> sẽ khiến 2 job ghi cùng topic `machine-state` → giá trị UI nhấp nháy.
+
+Script tổng quát (tuỳ chọn chạy Spark local):
+
+```powershell
+.\scripts\run-all.ps1 -Mode Simulation                     # giả lập (mặc định)
+.\scripts\run-all.ps1 -Mode Real                           # Kepware thật
+.\scripts\run-all.ps1 -Mode Simulation -SkipSpark:$false   # thêm Spark local
+```
+
 | Service | Profile | Vai trò | Truy cập từ máy host |
 |---|---|---|---|
 | `gateway` | — | nginx: UI + proxy `/state-api/*` → state-api, `/master-api/*` → master-api | **http://localhost:5080** |

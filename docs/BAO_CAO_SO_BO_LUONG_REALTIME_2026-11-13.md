@@ -305,20 +305,38 @@ docker compose -f docker-compose.server.yml ps
 ```powershell
 cd E:\Work\SFSVcongty\Laird\Code\Data-Integrate
 
-# Toàn bộ pipeline, middleware đọc Kepware THẬT
-.\scripts\run-all.ps1 -RealKepware
+# ① GIẢ LẬP — không cần Kepware, dữ liệu liên tục
+.\scripts\run-sim.ps1
+
+# ② THẬT — đọc Kepware qua OPC UA
+.\scripts\run-real.ps1
 ```
 
-`run-all.ps1` lần lượt: tạo topic `machine-state` → Spark Structured Streaming → state-api (:8000) → master-api (:8001) → middleware → frontend Vite (:5173). Log nằm ở `Data-Integrate\logs\{spark,state-api,master-api,middleware}.{out,err}`.
+> ⚠ **Spark KHÔNG chạy trên máy Windows** — Spark đã chạy trong Docker trên server
+> `192.168.179.176` (`spark-raw-ingest` / `spark-machine-state` / `spark-batch-kpi`).
+> Chạy thêm Spark local sẽ khiến **2 job ghi cùng topic `machine-state`** → giá trị
+> trên UI nhấp nháy. Script `run-sim.ps1` / `run-real.ps1` vì vậy chỉ khởi động:
+> state-api (:8000) → master-api (:8001) → middleware → frontend Vite (:5173).
+> Log nằm ở `Data-Integrate\logs\{state-api,master-api,middleware}.{out,err}`.
+
+`run-all.ps1` (script tổng quát, có tuỳ chọn Spark local):
+
+```powershell
+.\scripts\run-all.ps1 -Mode Simulation            # giả lập (mặc định)
+.\scripts\run-all.ps1 -Mode Real                  # Kepware thật
+.\scripts\run-all.ps1 -Mode Simulation -SkipSpark:$false   # chạy thêm Spark local
+```
 
 Chạy riêng từng thành phần:
 
 ```powershell
-.\scripts\run-middleware.ps1              # middleware (Kepware thật)
-.\scripts\run-middleware.ps1 -Simulation  # middleware (giả lập, không cần Kepware)
-.\scripts\run-spark.ps1                   # Spark Structured Streaming
-.\scripts\run-state-api.ps1               # state-api :8000
-.\scripts\run-master-api.ps1              # master-api :8001
+.\scripts\run-middleware.ps1 -Mode Simulation   # middleware giả lập
+.\scripts\run-middleware.ps1 -Mode Real         # middleware đọc Kepware thật
+.\scripts\run-state-api.ps1                    # state-api :8000
+.\scripts\run-master-api.ps1                   # master-api :8001
+.\scripts\run-spark.ps1                        # Spark Structured Streaming (LOCAL - tránh!)
+.\scripts\run-raw-ingest.ps1                   # Spark raw-ingest (LOCAL - tránh!)
+.\scripts\run-batch-kpi.ps1                    # Spark batch KPI (LOCAL - tránh!)
 ```
 
 ### 7.3. Kiểm tra
