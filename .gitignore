@@ -64,6 +64,9 @@ desktop.ini
 # Log stdout/stderr của các tiến trình nền do scripts/run-*.ps1 ghi ra.
 logs-*.out
 logs-*.err
+# Log dev server Vite (npm run dev trong dashboard/frontend).
+dashboard/frontend/dev.log
+dashboard/frontend/dev.err
 # Checkpoint Spark Structured Streaming (sinh lại khi chạy lại).
 .spark-checkpoints/
 # Class đã biên dịch của patch Hadoop (build lại từ .java).
