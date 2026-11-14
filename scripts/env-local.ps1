@@ -29,6 +29,24 @@ $env:KAFKA_BROKERS   = "192.168.179.176:29092"
 $env:STATE_TOPIC     = "machine-state"
 $env:TELEMETRY_TOPIC = "industrial.telemetry"
 
+# --- Nap .env goc repo (MASTER_DB_URL, PG_DSN, MINIO_*, KEPWARE_*, ...) ---
+# Services doc config tu bien moi truong; .env la noi duy nang chua gia tri that.
+$EnvFile = Join-Path $Root ".env"
+if (Test-Path $EnvFile) {
+    foreach ($line in Get-Content $EnvFile) {
+        if ($line -match '^\s*#' -or $line -notmatch '=') { continue }
+        $k, $v = $line -split '=', 2
+        $k = $k.Trim(); $v = $v.Trim().Trim('"').Trim("'")
+        if ($k) { Set-Item -Path "env:$k" -Value $v }
+    }
+}
+
+# state-api / master-api doc PG_DSN; .env co the chi co MASTER_DB_URL -> map sang PG_DSN
+if (-not $env:PG_DSN -and $env:MASTER_DB_URL) {
+    $env:PG_DSN = $env:MASTER_DB_URL
+}
+if ($env:PG_DSN) { Write-Host "PG_DSN          = $env:PG_DSN" }
+
 # --- Python ---
 $env:PYSPARK_PYTHON        = $Py
 $env:PYSPARK_DRIVER_PYTHON = $Py

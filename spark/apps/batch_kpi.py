@@ -352,14 +352,23 @@ def compute(spark: SparkSession, pg: Pg, args: argparse.Namespace, rs: datetime,
           .select(*DQ_COLS))
 
     # ------------------------------------------------------------------ ghi PostgreSQL
+    #
+    # ⚠ STAGING TABLE PHẢI RIÊNG CHO MỖI LẦN CHẠY.
+    #   Nếu dùng chung ten (stg_machine_kpi_1m) cho tat ca cac job, cac job chay
+    #   SONG SONG (backfill + incremental) se ghi de len nhau: job A stage xong,
+    #   job B overwrite staging, roi job A INSERT lay du lieu cua job B ->
+    #   mat du lieu. Dung ten co suffix theo PID + timestamp.
+    run_id = f"{os.getpid()}_{int(datetime.now(timezone.utc).timestamp())}"
+    stg = {t: f"stg_{t}_{run_id}" for t in
+           ("machine_kpi_1m", "machine_state_interval", "tag_metric_1m", "data_quality_1m")}
+
     pg.execute([f"SELECT batch_ensure_partitions('{rs.astimezone(timezone.utc).date()}'::date, "
                 f"'{(re - timedelta(microseconds=1)).astimezone(timezone.utc).date()}'::date)"]
-               + [f"CREATE UNLOGGED TABLE IF NOT EXISTS stg_{t} (LIKE {t})"
-                  for t in ("machine_kpi_1m", "machine_state_interval", "tag_metric_1m", "data_quality_1m")])
-    pg.stage(kpi, "stg_machine_kpi_1m")
-    pg.stage(intervals_out, "stg_machine_state_interval")
-    pg.stage(tags, "stg_tag_metric_1m")
-    pg.stage(dq, "stg_data_quality_1m")
+               + [f"CREATE UNLOGGED TABLE IF NOT EXISTS {stg[t]} (LIKE {t})" for t in stg])
+    pg.stage(kpi, stg["machine_kpi_1m"])
+    pg.stage(intervals_out, stg["machine_state_interval"])
+    pg.stage(tags, stg["tag_metric_1m"])
+    pg.stage(dq, stg["data_quality_1m"])
 
     a, b = iso(rs), iso(re)
     h0 = iso(rs.replace(minute=0))
@@ -367,14 +376,14 @@ def compute(spark: SparkSession, pg: Pg, args: argparse.Namespace, rs: datetime,
     ic = ", ".join(INTERVAL_COLS)
     pg.execute([
         f"DELETE FROM machine_kpi_1m WHERE ts_minute >= '{a}' AND ts_minute < '{b}'",
-        f"INSERT INTO machine_kpi_1m ({', '.join(KPI_COLS)}) SELECT {', '.join(KPI_COLS)} FROM stg_machine_kpi_1m",
+        f"INSERT INTO machine_kpi_1m ({', '.join(KPI_COLS)}) SELECT {', '.join(KPI_COLS)} FROM {stg['machine_kpi_1m']}",
         f"DELETE FROM tag_metric_1m WHERE ts_minute >= '{a}' AND ts_minute < '{b}'",
-        f"INSERT INTO tag_metric_1m ({', '.join(TAG_COLS)}) SELECT {', '.join(TAG_COLS)} FROM stg_tag_metric_1m",
+        f"INSERT INTO tag_metric_1m ({', '.join(TAG_COLS)}) SELECT {', '.join(TAG_COLS)} FROM {stg['tag_metric_1m']}",
         f"DELETE FROM data_quality_1m WHERE ts_minute >= '{a}' AND ts_minute < '{b}'",
-        f"INSERT INTO data_quality_1m ({', '.join(DQ_COLS)}) SELECT {', '.join(DQ_COLS)} FROM stg_data_quality_1m",
+        f"INSERT INTO data_quality_1m ({', '.join(DQ_COLS)}) SELECT {', '.join(DQ_COLS)} FROM {stg['data_quality_1m']}",
         # khoang bat dau trong [rs, re): thay the; khoang noi tiep tu truoc rs: upsert (keo dai neu dang mo)
         f"DELETE FROM machine_state_interval WHERE start_ts >= '{a}' AND start_ts < '{b}'",
-        f"""INSERT INTO machine_state_interval AS t ({ic}) SELECT {ic} FROM stg_machine_state_interval
+        f"""INSERT INTO machine_state_interval AS t ({ic}) SELECT {ic} FROM {stg['machine_state_interval']}
             ON CONFLICT (machine_id, start_ts) DO UPDATE SET
               end_ts = CASE WHEN EXCLUDED.is_open THEN GREATEST(t.end_ts, EXCLUDED.end_ts) ELSE EXCLUDED.end_ts END,
               is_open = CASE WHEN EXCLUDED.is_open AND t.end_ts > EXCLUDED.end_ts THEN t.is_open
@@ -391,8 +400,9 @@ def compute(spark: SparkSession, pg: Pg, args: argparse.Namespace, rs: datetime,
                    sum(good_count), sum(defect_count), sum(ideal_time_sec)
             FROM machine_kpi_1m WHERE ts_minute >= '{h0}' AND ts_minute < '{h1}'
             GROUP BY machine_id, date_trunc('hour', ts_minute)""",
-        # staging chi dung trong lan chay -> don sach (khong giu ban sao du lieu)
-        "TRUNCATE stg_machine_kpi_1m, stg_machine_state_interval, stg_tag_metric_1m, stg_data_quality_1m",
+        # staging chi dung trong lan chay -> XOA HANG (khong giu ban sao du lieu)
+        f"DROP TABLE IF EXISTS {stg['machine_kpi_1m']}, {stg['machine_state_interval']}, "
+        f"{stg['tag_metric_1m']}, {stg['data_quality_1m']}",
     ])
     stats = {"events": ev.count(), "deduped": d.count(), "kpiRows": kpi.count(),
              "intervals": intervals_out.count(), "tagRows": tags.count()}

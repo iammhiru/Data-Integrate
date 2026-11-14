@@ -1,0 +1,36 @@
+# ============================================================================
+#  Spark image cho MÁY SERVER 192.168.179.176 (Linux) — build OFFLINE.
+#
+#  Khác với docker/spark/Dockerfile (dùng ADD từ Maven Central — server có thể
+#  bị chặn repo1.maven.org), bản này COPY jar từ `docker/spark/jars/` đã được
+#  gom sẵn trên máy Windows bằng scripts/prepare-spark-jars.ps1.
+#
+#  TẤT CẢ jar đều là bản chuẩn từ Maven Central — không sửa đổi gì.
+#
+#  Build:  docker compose -f docker-compose.spark-server.yml build
+# ============================================================================
+FROM apache/spark:3.5.5-scala2.12-java17-python3-ubuntu
+
+# --- Kafka source/sink cho Structured Streaming -------------------------------
+COPY --chmod=644 jars/spark-sql-kafka-0-10_2.12-3.5.5.jar          /opt/spark/jars/
+COPY --chmod=644 jars/spark-token-provider-kafka-0-10_2.12-3.5.5.jar  /opt/spark/jars/
+COPY --chmod=644 jars/kafka-clients-3.4.1.jar                        /opt/spark/jars/
+COPY --chmod=644 jars/commons-pool2-2.11.1.jar                       /opt/spark/jars/
+
+# --- S3A filesystem (MinIO) — phải khớp Hadoop 3.3.4 đóng kèm Spark 3.5 ---
+COPY --chmod=644 jars/hadoop-aws-3.3.4.jar                  /opt/spark/jars/
+COPY --chmod=644 jars/aws-java-sdk-bundle-1.12.262.jar       /opt/spark/jars/
+
+# --- PostgreSQL JDBC (batch_kpi.py ghi fact qua JDBC) -----------------------
+COPY --chmod=644 jars/postgresql-42.7.4.jar                 /opt/spark/jars/
+
+USER root
+# /opt/spark/work: Spark ghi file tam khi shuffle — phai co quyen ghi.
+# /opt/spark-checkpoints: checkpoint Structured Streaming (dung chung volume).
+RUN mkdir -p /opt/spark-apps /opt/spark/work /opt/spark-checkpoints /opt/spark/logs \
+ && chown -R spark:spark /opt/spark/work /opt/spark-checkpoints /opt/spark/logs
+USER spark
+WORKDIR /opt/spark
+
+# Ghi log ra stdout de `docker logs` theo doi duoc.
+ENV SPARK_LOG_DIR=/opt/spark/logs

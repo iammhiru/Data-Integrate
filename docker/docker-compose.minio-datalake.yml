@@ -1,0 +1,104 @@
+# ============================================================================
+#  MINIO DATA LAKE — cài riêng trên máy Linux 192.168.179.176
+#
+#  TÁCH RIÊNG (không dùng docker-compose.server.yml) vì:
+#   · máy 176 đã có 1 MinIO khác đang chạy → tránh trùng container/volume
+#   · PostgreSQL đã chạy ổn từ docker-compose.server.yml → không đụng vào nó
+#   · cổng đề xuất 4434 (S3 API) / 4435 (Web console) để không đụng MinIO cũ
+#
+#  CÁCH DÙNG:
+#    1. Copy file này + .env sang máy server:
+#         scp docker/docker-compose.minio-datalake.yml  dev@192.168.179.176:/home/dev/smart-factory/
+#         scp .env.example                             dev@192.168.179.176:/home/dev/smart-factory/
+#    2. Trên máy server:
+#         cd /home/dev/smart-factory
+#         cp .env.example .env      # sửa MINIO_ROOT_USER / MINIO_ROOT_PASSWORD nếu muốn
+#         docker compose -f docker-compose.minio-datalake.yml up -d
+#    3. Mở firewall (xem docs/deploy-remote-infra.md mục 6)
+#    4. Kiểm tra:
+#         docker compose -f docker-compose.minio-datalake.yml ps
+#         curl -s http://192.168.179.176:4434/minio/health/live
+#
+#  ⚠ Bucket tạo bởi `minio-init` (chạy 1 lần rồi thoát) — đây là bucket
+#    `smart-factory` mà spark/apps/raw_ingest.py + batch_kpi.py dùng.
+# ============================================================================
+
+name: smart-factory-datalake
+
+services:
+  # ---------------------------------------------------------------- MinIO (Data Lake)
+  #
+  # Image `minio/minio` bị gỡ khỏi Docker Hub/quay.io → dùng `alpine/minio`
+  # (build từ source chính thức), giống hệt docker-compose.yml trong repo.
+  # Nếu máy server không pull được image này → xem mục "FALLBACK" cuối file.
+  minio:
+    image: ${MINIO_IMAGE:-alpine/minio:RELEASE.2025-10-15T17-29-55Z}
+    container_name: sf-minio-dl
+    hostname: sf-minio-dl
+    user: "0:0"                # image chạy user 'minio', không ghi được vào named volume (owner root)
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    ports:
+      # Host 4434 -> container 9000 (S3 API), host 4435 -> container 9001 (Web console).
+      # Container vẫn nghe ở 9000/9001 BÊN TRONG → client trong cùng compose network
+      # vẫn dùng được http://minio:9000.
+      - "${MINIO_S3_PORT:-4434}:9000"
+      - "${MINIO_CONSOLE_PORT:-4435}:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    volumes:
+      - minio-dl-data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.0"
+
+  # Tạo bucket `smart-factory` (chạy 1 lần rồi thoát).
+  minio-init:
+    image: amazon/aws-cli:2.27.0
+    container_name: sf-minio-dl-init
+    restart: "no"
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      AWS_DEFAULT_REGION: us-east-1
+      MINIO_BUCKET: ${MINIO_BUCKET:-smart-factory}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        aws --endpoint-url http://minio:9000 s3api head-bucket --bucket "$$MINIO_BUCKET" 2>/dev/null \
+          || aws --endpoint-url http://minio:9000 s3 mb "s3://$$MINIO_BUCKET"
+        echo "bucket $$MINIO_BUCKET ready"
+    networks: [default]
+
+volumes:
+  minio-dl-data:
+
+# ============================================================================
+# FALLBACK — nếu KHÔNG pull được `alpine/minio` (Docker Hub bị chặn):
+#
+#   A) Build từ source MinIO chính thức (cần git + internet):
+#        docker build -t local/minio:RELEASE.2025-10-15T17-29-55Z \
+#          https://github.com/minio/minio.git#RELEASE.2025-10-15T17-29-55Z
+#        # rồi đặt MINIO_IMAGE=local/minio:RELEASE.2025-10-15T17-29-55Z trong .env
+#
+#   B) Dùng image MinIO cũ đã có sẵn trên máy 176 (nếu MinIO cũ của anh
+#      chạy bằng docker):
+#        docker images | grep -i minio
+#        # đặt MINIO_IMAGE=<tên image đó> trong .env
+#        # LƯU Ý: nếu MinIO cũ dùng chung image thì KHÔNG được đặt cùng
+#        #        container_name (đã tách sẵn: sf-minio-dl vs sf-minio).
+#
+#   C) Chạy MinIO KHÔNG qua Docker (binary trực tiếp) — xem docs/deploy-remote-infra.md.
+# ============================================================================

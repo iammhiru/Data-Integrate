@@ -70,3 +70,13 @@ logs-*.err
 scripts/hadoop-patch/classes/
 # winutils.exe được copy từ scripts/winutils/winutils.exe khi chạy.
 scripts/winutils/bin/
+
+# Jar S3A/JDBC tải về bằng scripts/fetch-jars.ps1 (~270MB) — không commit.
+scripts/jars/
+
+# Jar cho image Spark chạy trên server, gom bằng scripts/prepare-spark-jars.ps1
+# (~275MB) — không commit.
+docker/spark/jars/
+
+# Bundle deploy (docker/spark + spark/apps + spark/conf) ~247MB — không commit.
+build/

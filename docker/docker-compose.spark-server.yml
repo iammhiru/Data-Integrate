@@ -1,0 +1,200 @@
+# ============================================================================
+#  SPARK TRÊN MÁY SERVER 192.168.179.176 (chạy cùng Kafka + MinIO + Postgres)
+#
+#  MỤC ĐÍCH:
+#    Spark chạy NATIVE trên Windows không được (thiếu hadoop.dll native ->
+#    UnsatisfiedLinkError khi S3A ghi Parquet). Giai phap: chay Spark trong
+#    Docker tren server Linux, noi da co Kafka + MinIO + PostgreSQL.
+#
+#  KIEN TRUC (network_mode: host -> container dung chung network stack voi host):
+#
+#    Middleware (Windows) ──> Kafka 192.168.179.176:29092
+#                                        │
+#              ┌─────────────────────────┴──────────────────────────┐
+#              │ (container tren server)                             │
+#              │                                                    │
+#              │  spark-raw-ingest  ──> MinIO  s3a://smart-factory/raw/telemetry
+#              │         │                                          (Parquet)
+#              │         v                                          │
+#              │  spark-batch-kpi  ──> PostgreSQL :5432  machine_kpi_1m
+#              │                                                    │
+#              │  spark-machine-state ──> Kafka topic `machine-state`│
+#              └────────────────────────────────────────────────────┘
+#
+#    state-api / master-api / Frontend (Windows) ──> Kafka + PostgreSQL
+#
+#  ⚠ TẠI SAO KHÔNG DÙNG spark://master?
+#    - master/worker se phai them container + 2 port (7077, 8080).
+#      Port 8080/8081 TRONG SERVER DA DUNG boi dich vu khac -> de dung.
+#    - local[*] trong 1 container: nhanh hon, it tai nguyen, du cho
+#      26 may x 404 tag (van ghi nho).
+#    - 3 job (raw-ingest / machine-state / batch) chay doc lap, moi job
+#      1 container rieng -> khong tranh checkpoint/UI port.
+#
+#  ⚠ MỌI ENDPOINT DÙNG IP HOST (192.168.179.176) KHÔNG DÙNG DNS:
+#    Kafka / MinIO / Postgres nam o 3 compose project KHAC NHAU
+#    (kafka-net, smart-factory-datalake_default, smart-factory-server_default)
+#    -> khong chung network nen khong dung ten service. IP host thi luon dung.
+#
+#  CÁCH DÙNG (trên máy WINDOWS):
+#    1. .\scripts\prepare-spark-jars.ps1          # gom jar vao docker\spark\jars\
+#    2. scp -r docker\spark dev@192.168.179.176:/home/dev/smart-factory/
+#    3. scp -r spark\apps spark\conf dev@192.168.179.176:/home/dev/smart-factory/
+#    4. scp docker\docker-compose.spark-server.yml dev@192.168.179.176:/home/dev/smart-factory/
+#    5. ssh dev@192.168.179.176 -> cd /home/dev/smart-factory
+#         cp .env.example .env   (sua neu can)
+#         docker compose -f docker-compose.spark-server.yml build
+#         docker compose -f docker-compose.spark-server.yml up -d
+#
+#  Xem huong dan day du: docs/deploy-spark-server.md
+# ============================================================================
+
+name: smart-factory-spark
+
+# --- Bien moi truong chung cho ca 3 Spark job ---------------------------------
+x-spark-env: &spark-env
+  # --- Kafka ---
+  KAFKA_BOOTSTRAP: ${KAFKA_BOOTSTRAP:-192.168.179.176:29092}
+  # --- MinIO (S3A) ---
+  AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+  AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+  AWS_REGION: us-east-1
+  MINIO_BUCKET: ${MINIO_BUCKET:-smart-factory}
+  # --- PostgreSQL (JDBC) ---
+  POSTGRES_DB: ${POSTGRES_DB:-smart_factory}
+  POSTGRES_USER: ${POSTGRES_USER:-sf_user}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sf_password}
+  PG_JDBC_URL: jdbc:postgresql://192.168.179.176:5432/${POSTGRES_DB:-smart_factory}
+  PLANT_TZ: ${PLANT_TZ:-Asia/Ho_Chi_Minh}
+  # Driver la container trong host network -> bind IP host, khong phai 127.0.0.1
+  SPARK_DRIVER_HOST: 192.168.179.176
+
+# --- Base chung cho moi Spark job ---------------------------------------------
+x-spark-server: &spark-server
+  build:
+    context: ./docker/spark
+    dockerfile: Dockerfile.server
+  image: smart-factory/spark-server:3.5.5
+  container_name: spark-server
+  # Dung chung network stack voi host -> endpoint khong can DNS noi bo,
+  # va container ra duoc mang LAN (vi du san cho Spark UI).
+  network_mode: host
+  restart: unless-stopped
+  environment: *spark-env
+  volumes:
+    - ./spark/apps:/opt/spark-apps:ro
+    - ./spark/conf/spark-defaults-server.conf:/opt/spark/conf/spark-defaults.conf:ro
+    # Checkpoint DUNG CHUNG de job restart khong doc lai tu dau (at-least-once).
+    - spark-checkpoints:/opt/spark-checkpoints
+    - spark-work:/opt/spark/work
+
+services:
+  # ---------------------------------------------------------------- L0: raw ingest
+  # Kafka `industrial.telemetry` -> MinIO s3a://smart-factory/raw/telemetry/*.parquet
+  spark-raw-ingest:
+    <<: *spark-server
+    container_name: spark-raw-ingest
+    restart: unless-stopped
+    environment:
+      <<: *spark-env
+      SPARK_APP_NAME: raw-ingest
+      SPARK_UI_PORT: 4040
+      # raw-ingest chi dung `starting-offsets` khi CHUA co checkpoint.
+      # Kafka hien co ~2.5 trieu message -> earliest ton ~13 phut moi catch up.
+      # Set RAW_INGEST_OFFSETS=latest neu chi can du lieu moi.
+      RAW_INGEST_OFFSETS: ${RAW_INGEST_OFFSETS:-earliest}
+    command:
+      - /opt/spark/bin/spark-submit
+      - --conf
+      - spark.ui.port=4040
+      - --conf
+      - spark.app.name=raw-ingest
+      - /opt/spark-apps/raw_ingest.py
+      - --bootstrap
+      - ${KAFKA_BOOTSTRAP:-192.168.179.176:29092}
+      - --topic
+      - industrial.telemetry
+      - --bucket
+      - ${MINIO_BUCKET:-smart-factory}
+      - --starting-offsets
+      - ${RAW_INGEST_OFFSETS:-earliest}
+      - --trigger
+      - 60 seconds
+      - --checkpoint-dir
+      - /opt/spark-checkpoints/raw-ingest
+
+  # ---------------------------------------------------------------- Speed layer
+  # Kafka `industrial.telemetry` -> Kafka `machine-state` (compacted)
+  spark-machine-state:
+    <<: *spark-server
+    container_name: spark-machine-state
+    restart: unless-stopped
+    environment:
+      <<: *spark-env
+      SPARK_APP_NAME: machine-state
+      SPARK_UI_PORT: 4041
+    command:
+      - /opt/spark/bin/spark-submit
+      - --conf
+      - spark.ui.port=4041
+      - --conf
+      - spark.app.name=machine-state
+      - /opt/spark-apps/machine_state_stream.py
+      - --bootstrap
+      - ${KAFKA_BOOTSTRAP:-192.168.179.176:29092}
+      - --input-topic
+      - industrial.telemetry
+      - --output-topic
+      - machine-state
+      - --starting-offsets
+      - latest
+      - --trigger
+      - 1 second
+      - --checkpoint-dir
+      - /opt/spark-checkpoints/machine-state
+
+  # ---------------------------------------------------------------- L1/L2: batch KPI
+  # MinIO raw Parquet -> PostgreSQL machine_kpi_1m (vong lap moi BATCH_INTERVAL_SEC)
+  spark-batch-kpi:
+    <<: *spark-server
+    container_name: spark-batch-kpi
+    restart: unless-stopped
+    environment:
+      <<: *spark-env
+      SPARK_APP_NAME: batch-kpi
+      SPARK_UI_PORT: 4042
+      BATCH_INTERVAL_SEC: ${BATCH_INTERVAL_SEC:-300}
+      DAILY_AT: ${DAILY_AT:-00:30}
+    command:
+      - /bin/bash
+      - -c
+      - |
+        set -uo pipefail
+        echo "batch-scheduler: moi $${BATCH_INTERVAL_SEC}s, daily luc $${DAILY_AT}"
+        while true; do
+          start=$$(date +%s)
+          /opt/spark/bin/spark-submit \
+            --conf spark.ui.port=4042 \
+            --conf spark.app.name=batch-kpi \
+            --conf spark.cores.max=2 \
+            --conf spark.executor.memory=1g \
+            --conf spark.driver.memory=1g \
+            --conf spark.sql.shuffle.partitions=8 \
+            --conf "spark.driver.extraJavaOptions=-Duser.timezone=UTC" \
+            --conf "spark.executor.extraJavaOptions=-Duser.timezone=UTC" \
+            /opt/spark-apps/batch_kpi.py \
+            --mode auto \
+            --daily-at "$${DAILY_AT}" \
+            --bucket "$${MINIO_BUCKET}" \
+            --pg-url "$${PG_JDBC_URL}" \
+            --pg-user "$${POSTGRES_USER}" \
+            --pg-password "$${POSTGRES_PASSWORD}" \
+            --tz "$${PLANT_TZ}" \
+            || echo "batch that bai (thu lai o chu ky sau)"
+          elapsed=$$(date +%s)
+          sleep $$(( $${BATCH_INTERVAL_SEC} > elapsed ? $${BATCH_INTERVAL_SEC} - elapsed : 5 ))
+        done
+
+volumes:
+  spark-checkpoints:
+  spark-work:
