@@ -4,6 +4,10 @@ WORKDIR /src/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci
 COPY frontend/ ./
+# live = UI doc state-api qua WebSocket; mock = simulator trong trinh duyet.
+# Van co the ghi de luc chay bang ?source=mock | ?source=live.
+ARG VITE_DATA_SOURCE=mock
+ENV VITE_DATA_SOURCE=${VITE_DATA_SOURCE}
 RUN npm run build
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS backend

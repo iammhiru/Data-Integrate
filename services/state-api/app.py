@@ -229,7 +229,14 @@ def consume_forever() -> None:
             time.sleep(5)
 
 
-app = FastAPI(title="Machine State API", version="1.0")
+app = FastAPI(title="Smart Factory State & Analytics API", version="1.1.0",
+              description="Realtime: WebSocket /ws/machines + /api/machines (Kafka machine-state). "
+                          "Analytics: /api/analytics/* (PostgreSQL, batch layer)")
+
+# Analytics (batch layer, PostgreSQL) - xem analytics.py; realtime ben duoi giu nguyen.
+from analytics import router as analytics_router  # noqa: E402
+
+app.include_router(analytics_router)
 
 
 def _now_iso() -> str:

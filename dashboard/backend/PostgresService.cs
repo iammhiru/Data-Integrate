@@ -35,15 +35,7 @@ public sealed class PostgresService : IAsyncDisposable
     {
         var rows = await Query("SELECT machine_id, machine_name, machine_type, line FROM machine ORDER BY machine_id LIMIT 1000", null, null, null, token);
         catalog.Replace(rows.Select(r => new MachineDefinition((string)r["machine_id"]!, (string)r["machine_name"]!, (string?)r["machine_type"] ?? "UNKNOWN", (string?)r["line"] ?? "UNKNOWN", Catalog.Fields)).ToArray());
-        // Current source has the table but not the writer yet. Empty is legitimate.
-        var latest = await Query("SELECT machine_id, status, temperature, pressure, speed, energy, event_time FROM machine_status_current WHERE event_time IS NOT NULL LIMIT 1000", null, null, null, token);
-        foreach (var row in latest)
-        {
-            var payload = new Dictionary<string, object?>();
-            foreach (var f in new[] { "status", "temperature", "pressure", "speed", "energy" }) payload[f] = row[f];
-            var timestamp = new DateTimeOffset(DateTime.SpecifyKind((DateTime)row["event_time"]!, DateTimeKind.Utc));
-            store.Apply(MockEvents.Create((string)row["machine_id"]!, payload, timestamp, source: "postgres-current"));
-        }
+        // machine_status_current da bo (14/11): trang thai hien tai do state-api (Kafka compacted) phuc vu.
     }
     public async Task<object> Analytics(DateOnly from, DateOnly to, string? machine, CancellationToken token)
     {
