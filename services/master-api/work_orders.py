@@ -119,7 +119,14 @@ class WoStore:
 
     def _connect(self):
         if self._conn is not None:
-            return self._conn
+            # ⚠ Kiểm tra connection còn sống TRƯỚC khi dùng.
+            #   PostgreSQL đóng connection idle quá lâu (NAT/firewall/idle timeout)
+            #   mà client không biết → query sau lỗi
+            #   "server closed the connection unexpectedly" và treo tới timeout.
+            #   `closed` là True khi server đã đóng → tự mở lại.
+            if not self._conn.closed:
+                return self._conn
+            self._conn = None
         import psycopg  # noqa: PLC0415
 
         self._conn = psycopg.connect(self.dsn, autocommit=False, connect_timeout=5)
@@ -145,10 +152,15 @@ class WoStore:
                     row = cur.fetchone()
                 conn.commit()
             except Exception:
-                # Rollback + dong connection: neu khong rollback, moi query sau
-                # se fail voi "current transaction is aborted".
+                # Rollback + đóng connection: nếu không rollback, mọi query sau
+                # sẽ fail với "current transaction is aborted".
+                # ⚠ Nếu lỗi do connection chết (server đã đóng) thì phải BỎ
+                #   hẳn connection cũ, không phải chỉ rollback — connection đó
+                #   không tái sử dụng được nữa.
                 try:
                     conn.rollback()
+                    if conn.closed:
+                        self._conn = None
                 except Exception:  # noqa: BLE001
                     self.close()
                 raise
@@ -167,6 +179,8 @@ class WoStore:
             except Exception:
                 try:
                     conn.rollback()
+                    if conn.closed:
+                        self._conn = None
                 except Exception:  # noqa: BLE001
                     self.close()
                 raise
@@ -185,6 +199,8 @@ class WoStore:
             except Exception:
                 try:
                     conn.rollback()
+                    if conn.closed:
+                        self._conn = None
                 except Exception:  # noqa: BLE001
                     self.close()
                 raise

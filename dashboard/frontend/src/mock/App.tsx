@@ -38,6 +38,7 @@ import { MockSource, type TelemetrySource } from "./telemetry-source";
 import { LiveSource, liveEnabled } from "./live-source";
 import { buildStore, TelemetryContext, type TelemetryStore } from "./store";
 import { loadMasterData, type MasterData } from "./master-data";
+import { loadDashboard, ANALYTICS_REFRESH_MS, type Dashboard } from "./analytics-api";
 import { PlantOverview } from "./pages/PlantOverview";
 import { LineView } from "./pages/LineView";
 import { MachineDetail } from "./pages/MachineDetail";
@@ -85,6 +86,34 @@ export default function MockApp() {
       alive = false;
     };
   }, [source]);
+
+  /**
+   * KPI từ PostgreSQL (OEE/A/P/Q + sản lượng), TÍNH THEO WORK ORDER đang chạy.
+   *
+   * ⚠ NGUỒN SỰ THẬT từ 14/11/2026 — trước đây UI tự tính OEE trong browser
+   *   từ WebSocket (cửa sổ "từ lúc mở kết nối") → lệch hệ thống, OEE 2–4%.
+   *   Nay đọc từ `machine_kpi_1m` qua `state-api`, đúng theo lệnh đang chạy.
+   *
+   * Chu kỳ 1 PHÚT — khớp nhịp batch KPI; OEE không cần real-time.
+   */
+  const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const ctrl = new AbortController();
+    const tick = async () => {
+      const d = await loadDashboard(ctrl.signal);
+      if (!alive) return;
+      // Giữ số cũ nếu lần này lỗi → UI không nhấp nháy "—".
+      setDashboard((prev) => d ?? prev);
+    };
+    tick();
+    const t = setInterval(tick, ANALYTICS_REFRESH_MS);
+    return () => {
+      alive = false;
+      ctrl.abort();
+      clearInterval(t);
+    };
+  }, []);
   const [page, setPage] = useState<Page>("plant");
   const [lineId, setLineId] = useState<string>("LINE_01");
   const [drawer, setDrawer] = useState<Drawer>(null);
@@ -97,10 +126,10 @@ export default function MockApp() {
   // Vòng cập nhật 1 Hz — tương đương SignalR push 1 snapshot/s.
   useEffect(() => {
     const t = setInterval(() => {
-      setStore(buildStore(source, master));
+      setStore(buildStore(source, master, dashboard));
     }, 1000);
     return () => clearInterval(t);
-  }, [source, master]);
+  }, [source, master, dashboard]);
 
   /**
    * Nguồn LIVE tự đẩy dữ liệu qua WebSocket (`state-api` gom thay đổi mỗi
@@ -114,7 +143,7 @@ export default function MockApp() {
     let timer: ReturnType<typeof setTimeout> | null = null;
     const rebuild = () => {
       last = Date.now();
-      setStore(buildStore(source, master));
+      setStore(buildStore(source, master, dashboard));
     };
     const off = source.onChange(() => {
       const now = Date.now();
@@ -133,7 +162,7 @@ export default function MockApp() {
       if (timer) clearTimeout(timer);
       source.stop();
     };
-  }, [source, master]);
+  }, [source, master, dashboard]);
 
   // Ghi lịch sử cho sparkline + xu hướng sản lượng (mỗi lần store đổi).
   useEffect(() => {
@@ -239,6 +268,7 @@ export default function MockApp() {
                 onBack={() => navigate("plant")}
                 onOpenMachine={openMachine}
                 onSelectLine={openLine}
+                onOpenWoExecution={openWoExecution}
               />
             )}
             {page === "alarms" && (

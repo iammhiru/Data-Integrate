@@ -24,6 +24,13 @@ from psycopg_pool import ConnectionPool
 PG_DSN = os.getenv("PG_DSN", "")
 TZ = ZoneInfo(os.getenv("PLANT_TZ", "Asia/Ho_Chi_Minh"))
 REF_PATTERN = os.getenv("REF_MACHINE_PATTERN", "%FILLER%")   # may tham chieu OEE line (cong doan chiet)
+
+#: Cac `machine_type` duoc coi la "may tham chieu" khi tinh OEE theo Work Order.
+#: Line 01/02/03 deu chay cong doan CHIET (FILLING) — may nay ra san pham chinh,
+#: nen bo dem cua no moi la "san luong cua lenh" va OEE phai do tren may nay.
+REF_MACHINE_TYPES = [
+    "CARBONATED_FILLER", "STILL_FILLER", "CAN_FILLER",
+]
 MAX_WINDOW_DAYS = 31
 MINUTE_TABLE_MAX_DAYS = 2   # cua so dai hon -> doc bang 1h
 
@@ -36,7 +43,22 @@ def pool() -> ConnectionPool:
     if not PG_DSN:
         raise HTTPException(503, "chua cau hinh PG_DSN cho analytics")
     if _pool is None:
-        _pool = ConnectionPool(PG_DSN, min_size=1, max_size=5, kwargs={"row_factory": dict_row}, open=True)
+        # ⚠ `check=ConnectionPool.check_connection` — BẮT BUỘC.
+        #   PostgreSQL (đặc biệt qua NAT/firewall) có thể đóng connection đã
+        #   idle quá lâu mà client không biết. Không có `check`, pool giữ lại
+        #   connection chết → request treo cho tới timeout, hoặc lỗi
+        #   "server closed the connection unexpectedly" làm sập API.
+        #   `check` ping trước khi cấp connection → tự động loại connection
+        #   chết và mở cái mới. `reconnect_timeout` cho phép thử lại.
+        _pool = ConnectionPool(
+            PG_DSN,
+            min_size=1,
+            max_size=5,
+            kwargs={"row_factory": dict_row},
+            open=True,
+            check=ConnectionPool.check_connection,
+            reconnect_timeout=10,
+        )
     return _pool
 
 
@@ -145,6 +167,28 @@ def _csv(v: str | None) -> list[str] | None:
 
 def _ratio(a, b):
     return round(a / b, 4) if a is not None and b else None
+
+
+def _ratio_c(a, b):
+    """Tỉ lệ CÓ CHẶN trên [0, 1] — dùng cho A/P/Q.
+
+    ⚠ VÌ SAO CẦN:
+        A/P/Q là tỉ lệ, giá trị > 1 là VÔ NGHĨA và phải do lỗi dữ liệu
+        (counter lệch, thiết kế tốc độ sai) chứ không phải thực tế.
+        Để lộ ra sẽ làm người dùng mất niềm tin vào con số.
+
+        Quan sát thực tế trong PG (14/11/2026):
+          · 1921/1962 phút có defect_count == total_count (counter NG của
+            simulator bị lặp theo TotalCounter) → good phải tính lại.
+          · Có 25 phút good_count > total_count.
+          · P = 2.14 do ideal_time_sec (thiết kế tốc độ) vượt run_sec.
+        → Ta CHẶN tại 1.0 và gắn cờ `clamped` để UI hiển thị cảnh báo
+        chất lượng dữ liệu, thay vì hiện con số > 100%.
+    """
+    r = _ratio(a, b)
+    if r is None:
+        return None
+    return min(max(r, 0.0), 1.0)
 
 
 # =============================================================== KPI may (OEE / san luong)
@@ -331,23 +375,48 @@ def work_order_kpi(wo_id: str, groupBy: Literal["machine", "line"] = "machine"):
 
     w = {"from": meta["actual_start_time"], "to": meta["actual_end_time"] or datetime.now(timezone.utc)}
     items = kpi_rows(w, groupBy, None, None, None, False, wo_id)
+
+    # ⚠ TOT HOP THEO MÁY THAM CHIẾU (công đoạn CHIẾT của chuyền).
+    #
+    # VÌ SAO:
+    #   OEE là chỉ số của 1 MÁY, không phải của cả chuyền. Nếu cộng
+    #   run_sec của cả 9 máy rồi chia planned_sec của 1 máy → Availability
+    #   = 9 x (run/planned) > 1 (quan sát: 4.515). Sai hoàn toàn.
+    #
+    #   Cách tính đúng (chuẩn Vinamilk):
+    #     A = run_sec(MÁY THAM CHIẾU) / planned_sec(của lệnh)
+    #     P = ideal_time_sec(MÁY THAM CHIẾU) / run_sec(MÁY THAM CHIẾU)
+    #     Q = good_count(MÁY THAM CHIẾU) / total_count(MÁY THAM CHIẾU)
+    #
+    #   MÁY THAM CHIẾU = công đoạn `reference_process` trong bảng `line`
+    #   (LINE_01/02/03 đều là FILLING → máy chiết).
+    ref_row = q("SELECT m.machine_id FROM machine m JOIN line l ON l.line_id = m.line "
+                "WHERE m.line = %(line)s AND m.machine_type = ANY(%(types)s) "
+                "ORDER BY CASE WHEN m.machine_id LIKE %(ref)s THEN 0 ELSE 1 END, m.machine_id LIMIT 1",
+                {"line": meta["line_id"], "types": REF_MACHINE_TYPES, "ref": REF_PATTERN})
+    ref_machine = ref_row[0]["machine_id"] if ref_row else None
+
     totals = q("SELECT sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
                "sum(defect_count)::bigint AS defect, sum(run_sec)::float8 AS run_sec, "
                "sum(stopped_sec)::float8 AS stopped_sec, sum(faulted_sec)::float8 AS faulted_sec, "
                "sum(maint_sec)::float8 AS maint_sec, sum(ideal_time_sec)::float8 AS ideal_sec "
-               "FROM machine_kpi_1m WHERE wo_id = %(wo)s", {"wo": wo_id})
+               "FROM machine_kpi_1m WHERE wo_id = %(wo)s AND machine_id = %(ref)s",
+               {"wo": wo_id, "ref": ref_machine})
     t = totals[0] if totals else {}
     planned_sec = float(meta.get("elapsed_sec") or 0)
     run = float(t.get("run_sec") or 0)
     total = int(t.get("total") or 0)
     good = int(t.get("good") or 0)
-    a = _ratio(run, planned_sec)
-    p = _ratio(float(t.get("ideal_sec") or 0), run) if run else None
-    qq = _ratio(good, total)
+    # ⚠ good > total là dữ liệu lỗi (counter lệch) → chặn, không hiện Q > 100%.
+    good = min(good, total) if total > 0 else good
+    a = _ratio_c(run, planned_sec)
+    p = _ratio_c(float(t.get("ideal_sec") or 0), run) if run else None
+    qq = _ratio_c(good, total)
     return {
         "workOrder": meta,
         "started": True,
         "items": items,
+        "referenceMachine": ref_machine,
         "oee": round(a * p * qq, 4) if None not in (a, p, qq) else None,
         "availability": a, "performance": p, "quality": qq,
         "plannedTimeRule": "actual_start_time -> (actual_end_time ?? now) (chuẩn Vinamilk)",
@@ -529,3 +598,159 @@ def freshness(limit: int = Query(10, ge=1, le=100)):
     lag = (datetime.now(timezone.utc) - f["data_until"]).total_seconds() if f["data_until"] else None
     return {"dataUntil": f["data_until"], "lagSec": round(lag, 1) if lag is not None else None,
             "lastSuccessAt": f["last_success_at"], "runs": runs}
+
+
+# =============================================================== dashboard (nguon chinh cho UI)
+def _reference_machine(line_id: str) -> str | None:
+    """Máy tham chiếu của 1 chuyền (công đoạn CHIẾT)."""
+    rows = q("SELECT m.machine_id FROM machine m JOIN line l ON l.line_id = m.line "
+             "WHERE m.line = %(line)s AND m.machine_type = ANY(%(types)s) "
+             "ORDER BY CASE WHEN m.machine_id LIKE %(ref)s THEN 0 ELSE 1 END, m.machine_id LIMIT 1",
+             {"line": line_id, "types": REF_MACHINE_TYPES, "ref": REF_PATTERN})
+    return rows[0]["machine_id"] if rows else None
+
+
+def _wo_kpi_for(wo: dict, ref_machine: str | None) -> dict:
+    """Tính A/P/Q/OEE của 1 work order trên MÁY THAM CHIẾU.
+
+    PlannedTime = actual_start_time -> (actual_end_time ?? now)  (chuẩn Vinamilk)
+        A = run_sec(ref) / planned_sec(lenh)
+        P = ideal_time_sec(ref) / run_sec(ref)
+        Q = good_count(ref) / total_count(ref)
+    """
+    wo_id = wo["wo_id"]
+    planned_sec = float(wo.get("elapsed_sec") or 0)
+    params = {"wo": wo_id, "ref": ref_machine}
+    rows = q("SELECT sum(total_count)::bigint AS total, sum(good_count)::bigint AS good, "
+             "sum(defect_count)::bigint AS defect, sum(run_sec)::float8 AS run_sec, "
+             "sum(stopped_sec)::float8 AS stopped_sec, sum(faulted_sec)::float8 AS faulted_sec, "
+             "sum(maint_sec)::float8 AS maint_sec, sum(ideal_time_sec)::float8 AS ideal_sec "
+             "FROM machine_kpi_1m WHERE wo_id = %(wo)s AND machine_id = %(ref)s", params)
+    t = rows[0] if rows else {}
+    run = float(t.get("run_sec") or 0)
+    total = int(t.get("total") or 0)
+    good = int(t.get("good") or 0)
+    # ⚠ good > total là dữ liệu lỗi (counter lệch) → chặn, không hiện Q > 100%.
+    good = min(good, total) if total > 0 else good
+    a = _ratio_c(run, planned_sec) if planned_sec else None
+    p = _ratio_c(float(t.get("ideal_sec") or 0), run) if run else None
+    qq = _ratio_c(good, total)
+    return {
+        "oee": round(a * p * qq, 4) if None not in (a, p, qq) else None,
+        "availability": a, "performance": p, "quality": qq,
+        "plannedSec": round(planned_sec, 1),
+        "counts": {"total": total, "good": good, "defect": int(t.get("defect") or 0),
+                   "reject": max(total - good, 0)},
+        "progressRatio": _ratio(total, wo.get("planned_qty")),
+        "time": {"runSec": round(run, 1),
+                 "stoppedSec": round(float(t.get("stopped_sec") or 0), 1),
+                 "faultedSec": round(float(t.get("faulted_sec") or 0), 1),
+                 "maintSec": round(float(t.get("maint_sec") or 0), 1)},
+    }
+
+
+@router.get("/dashboard",
+            summary="KPI dashboard theo WORK ORDER dang chay (OEE/A/P/Q + san luong) — nguon chinh cho UI")
+def dashboard():
+    """KPI cho màn Plant Overview + Line View, TÍCH THEO WORK ORDER ĐANG CHẠY.
+
+    ⚠ VÌ SAO GẮN THEO WORK ORDER (không theo ca):
+        Yêu cầu nghiệp vụ: "đang chạy line A với WO B, đổi sang WO C thì OEE
+        phải là của WO C — không liên quan gì tới WO B".
+        Batch (`batch_kpi.py`) đã gán `wo_id` cho từng phút theo khoảng
+        [actual_start_time, actual_end_time) và khoá theo chuyền → dữ liệu
+        trong PG ĐÃ TÁCH BẠCH theo WO. Endpoint này chỉ đọc lại.
+
+    CỬA SỔ TÍNH:
+        · Có WO đang chạy (IN_PROGRESS/PAUSED) → khoảng thực tế của LỆNH.
+        · Không có WO                     → ca hiện tại (fallback).
+    """
+    # ── 1. Work order đang chạy của mỗi chuyền ────────────────────────
+    running = q("SELECT DISTINCT ON (line_id) wo_id, wo_code, line_id, product_id, status, "
+                "planned_qty, actual_start_time, actual_end_time, "
+                "EXTRACT(EPOCH FROM (COALESCE(actual_end_time, now()) - actual_start_time)) AS elapsed_sec "
+                "FROM work_order WHERE status IN ('IN_PROGRESS','PAUSED') "
+                "AND actual_start_time IS NOT NULL "
+                "ORDER BY line_id, actual_start_time DESC NULLS LAST")
+
+    # ── 2. Chuyền nào không có WO → dùng ca hiện tại ───────────────────
+    covered = {r["line_id"] for r in running}
+    all_lines = q("SELECT line_id, line_name, unit FROM line ORDER BY line_id")
+    fallback_lines = [r["line_id"] for r in all_lines if r["line_id"] not in covered]
+
+    shift_rows: list[dict] = []
+    if fallback_lines:
+        w = resolve_window(None, "current_shift", None, None)
+        shift_rows = kpi_rows(w, "line", None, None, _csv(",".join(fallback_lines)), True)
+
+    out_lines: list[dict] = []
+    for ln in all_lines:
+        line_id = ln["line_id"]
+        wo = next((r for r in running if r["line_id"] == line_id), None)
+        ref = _reference_machine(line_id)
+        if wo:
+            kpi = _wo_kpi_for(wo, ref)
+            out_lines.append({
+                "line_id": line_id,
+                "line_name": ln["line_name"],
+                "unit": ln["unit"],
+                "referenceMachine": ref,
+                "scope": "work_order",
+                "workOrder": {
+                    "woId": wo["wo_id"], "woCode": wo["wo_code"], "lineId": line_id,
+                    "productId": wo["product_id"], "status": wo["status"],
+                    "plannedQty": wo["planned_qty"],
+                    "actualStartTime": wo["actual_start_time"],
+                    "actualEndTime": wo["actual_end_time"],
+                },
+                **kpi,
+            })
+        else:
+            s = next((x for x in shift_rows if x.get("line_id") == line_id), None)
+            out_lines.append({
+                "line_id": line_id,
+                "line_name": ln["line_name"],
+                "unit": ln["unit"],
+                "referenceMachine": ref,
+                "scope": "shift",
+                "workOrder": None,
+                "oee": s.get("oee") if s else None,
+                "availability": s.get("availability") if s else None,
+                "performance": s.get("performance") if s else None,
+                "quality": s.get("quality") if s else None,
+                "plannedSec": s.get("time", {}).get("planned_sec") if s else None,
+                "counts": s.get("counts") if s else None,
+                "progressRatio": None,
+                "time": s.get("time") if s else None,
+            })
+
+    # ── 3. Tổng nhà máy = trung bình GIA QUYỀN theo sản lượng ─────────
+    wts = [l for l in out_lines if l.get("counts") and l["counts"].get("total")]
+    tot = sum(l["counts"]["total"] for l in wts)
+    plant: dict = {"oee": None, "availability": None, "performance": None, "quality": None}
+    if tot > 0:
+        agg = {"availability": 0.0, "performance": 0.0, "quality": 0.0}
+        for l in wts:
+            w = l["counts"]["total"]
+            for k in agg:
+                agg[k] += (l.get(k) or 0) * w
+        plant = {k: round(v / tot, 4) for k, v in agg.items()}
+        plant["oee"] = round(plant["availability"] * plant["performance"] * plant["quality"], 4)
+    plant["production"] = {
+        "total": sum(l["counts"]["total"] for l in wts),
+        "good": sum(l["counts"]["good"] for l in wts),
+        "defect": sum(l["counts"]["defect"] for l in wts),
+        "reject": sum(l["counts"]["reject"] for l in wts),
+    }
+    plant["linesWithWorkOrder"] = len(covered)
+
+    fresh = q("SELECT data_until, last_success_at FROM batch_freshness")[0]
+    lag = (datetime.now(timezone.utc) - fresh["data_until"]).total_seconds() if fresh["data_until"] else None
+    return {
+        "plant": plant,
+        "lines": out_lines,
+        "dataUntil": fresh["data_until"],
+        "lagSec": round(lag, 1) if lag is not None else None,
+        "lastSuccessAt": fresh["last_success_at"],
+        "formula": "A=run/planned(lenh), P=ideal/run, Q=good/total, OEE=A*P*Q — theo WORK ORDER",
+    }

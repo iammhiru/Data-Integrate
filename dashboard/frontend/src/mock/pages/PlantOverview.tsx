@@ -34,7 +34,7 @@ import {
 } from "../components/common";
 
 export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => void }) {
-  const { lines, shared, machines, events, source } = useTelemetry();
+  const { lines, shared, machines, events, source, dashboard } = useTelemetry();
   // KPI tổng toàn nhà máy.
   // Sản lượng = TỔNG các line (mỗi line đếm riêng sản phẩm của nó).
   // OEE = trung bình GIA QUYỀN theo sản lượng từng line (không cộng trung bình cộng).
@@ -59,6 +59,20 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
         }
       : { availability: 0, performance: 0, quality: 0 };
   const plantOee = avg.availability * avg.performance * avg.quality;
+
+  /**
+   * ⚠ ƯU TIÊN SỐ TỪ PostgreSQL (14/11/2026).
+   *   Backend đã tính sẵn OEE nhà máy (gia quyền theo sản lượng, mỗi line
+   *   theo WORK ORDER đang chạy) → lấy thẳng, khỏi tự cộng lại ở browser.
+   *   Chỉ fallback về số tự tính khi PG chưa sẵn sàng.
+   */
+  const plantPg = dashboard?.plant ?? null;
+  const plantOeeShown = plantPg?.oee ?? plantOee;
+  const plantAShown = plantPg?.availability ?? avg.availability;
+  const plantPShown = plantPg?.performance ?? avg.performance;
+  const plantQShown = plantPg?.quality ?? avg.quality;
+  const plantOutShown = plantPg ? plantPg.production.good : agg.output;
+
   const plantPlan = planProgress(agg.output, agg.plan);
   // Production Pace: so với kế hoạch tích luỹ tới giờ hiện tại.
   const elapsedRatio = shiftElapsedRatio();
@@ -97,6 +111,15 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
         </div>
         <div className="head-right">
           <SourceBadge kind={source.kind} />
+          {/* Badge nguồn KPI — OEE đọc từ PostgreSQL (batch), cập nhật 1 phút. */}
+          {dashboard && (
+            <span
+              className="mock-badge live"
+              title={`OEE/A/P/Q đọc từ PostgreSQL (machine_kpi_1m) · tính theo Work Order đang chạy · cập nhật mỗi 1 phút · dữ liệu đến ${dashboard.dataUntil ?? "—"}`}
+            >
+              PG
+            </span>
+          )}
         </div>
       </header>
 
@@ -119,16 +142,18 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
       <section className="kpi-row" aria-label="Plant KPI">
         <KpiCard
           label={t("oee")}
-          value={pct(plantOee)}
+          value={pct(plantOeeShown)}
           tone="accent"
           hint={tip("oee")}
           sub={
             <>
-              A {pct(avg.availability)} · P {pct(avg.performance)} · Q{" "}
-              {pct(avg.quality)}
-              {source.kind === "live" && (
+              A {pct(plantAShown)} · P {pct(plantPShown)} · Q{" "}
+              {pct(plantQShown)}
+              {plantPg ? (
+                <> · theo Work Order đang chạy</>
+              ) : source.kind === "live" ? (
                 <> · cửa sổ: {source.windowLabel()}</>
-              )}
+              ) : null}
             </>
           }
         />
@@ -141,7 +166,7 @@ export function PlantOverview({ onOpenLine }: { onOpenLine: (lineId: string) => 
           sub={
             plantPlan ? (
               <>
-                {fmtInt(agg.output)} / {fmtInt(agg.plan)} pcs ·{" "}
+                {fmtInt(plantOutShown)} / {fmtInt(agg.plan)} pcs ·{" "}
                 <span className={plantPlan.over ? "over" : undefined}>{plantPlan.label}</span>
               </>
             ) : (

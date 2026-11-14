@@ -68,7 +68,14 @@ class PostgresSource:
 
     def _connect(self):
         if self._conn is not None:
-            return self._conn
+            # ⚠ Connection dài hạn có thể bị PostgreSQL đóng khi idle quá lâu
+            #   (idle timeout / NAT / firewall) → mọi query sau lỗi
+            #   "server closed the connection unexpectedly" và master-api rơi
+            #   về JSON fallback (mất dữ liệu Work Order).
+            #   psycopg2: `closed` khác 0 nghĩa là connection đã hỏng.
+            if self._conn.closed == 0:
+                return self._conn
+            self._conn = None
         import psycopg2  # noqa: PLC0415 - import lai de khong hard-dep khi dung JSON
         import psycopg2.extras  # noqa: PLC0415
 
@@ -87,9 +94,15 @@ class PostgresSource:
 
     def _query(self, sql: str, args: tuple = ()) -> list[dict]:
         conn = self._connect()
-        with conn.cursor(cursor_factory=self._psycopg) as cur:
-            cur.execute(sql, args)
-            return [dict(r) for r in cur.fetchall()]
+        try:
+            with conn.cursor(cursor_factory=self._psycopg) as cur:
+                cur.execute(sql, args)
+                return [dict(r) for r in cur.fetchall()]
+        except Exception:
+            # Connection chết → bỏ hẳn, lần sau mở connection mới.
+            if getattr(conn, "closed", 0) != 0:
+                self._conn = None
+            raise
 
     def snapshot(self) -> dict[str, Any]:
         """Tra ve master data cung shape voi ban JSON — frontend khong phan biet nguon."""

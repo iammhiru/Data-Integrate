@@ -57,13 +57,16 @@ export function LineView({
   onBack,
   onOpenMachine,
   onSelectLine,
+  onOpenWoExecution,
 }: {
   lineId: string;
   onBack: () => void;
   onOpenMachine: (machineId: string) => void;
   onSelectLine?: (lineId: string) => void;
+  /** Mở màn thực thi Work Order (A3). */
+  onOpenWoExecution?: (woId: string) => void;
 }) {
-  const { lines, shared, events, source } = useTelemetry();
+  const { lines, shared, events, source, dashboard } = useTelemetry();
   const line = lines.find((l) => l.meta.lineId === lineId);
 
   if (!line) {
@@ -82,6 +85,13 @@ export function LineView({
     const c = m.values.AlarmCode;
     return typeof c === "number" && c !== 0;
   });
+
+  /**
+   * KPI của line từ PostgreSQL — TÍNH THEO WORK ORDER đang chạy.
+   * `scope === "work_order"` → số thuộc lệnh; "shift" → fallback theo ca.
+   */
+  const dashLine = dashboard?.lines.find((l) => l.lineId === lineId) ?? null;
+  const activeWo = dashLine?.workOrder ?? null;
 
   // Sắp xếp theo thứ tự công đoạn — suy ra từ processId trong catalog.
   const ordered = [...machines].sort(
@@ -114,12 +124,12 @@ export function LineView({
           </h1>
           <p className="page-sub">
             {meta.productName ?? "—"} · SKU {meta.sku ?? "—"} · {shiftLabel()}
-            {/* Work order đang chạy — nguồn: master data (master-api). */}
-            {meta.workOrder && (
+            {/* Work order đang chạy — nguồn: PostgreSQL (work order đang chạy). */}
+            {activeWo && (
               <>
                 {" · "}
-                <span title={`Kế hoạch: ${meta.workOrder.plannedQty ?? "—"}`}>
-                  WO {meta.workOrder.woCode}
+                <span title={`Kế hoạch: ${activeWo.plannedQty ?? "—"}`}>
+                  WO {activeWo.woCode}
                 </span>
               </>
             )}
@@ -137,6 +147,15 @@ export function LineView({
             onSelect={(id) => onSelectLine?.(id)}
           />
           <SourceBadge kind={source.kind} />
+          {/* Badge nguồn KPI — OEE đọc từ PostgreSQL (batch), cập nhật 1 phút. */}
+          {dashboard && (
+            <span
+              className="mock-badge live"
+              title={`OEE/A/P/Q đọc từ PostgreSQL (machine_kpi_1m) · tính theo Work Order đang chạy · cập nhật mỗi 1 phút · dữ liệu đến ${dashboard.dataUntil ?? "—"}`}
+            >
+              PG
+            </span>
+          )}
           <ConnectionBadge connection={connection} />
           <StatusBadge status={status} size="md" />
         </div>
@@ -150,6 +169,15 @@ export function LineView({
             value={pct(oee.oee)}
             tone="accent"
             hint={tip("oee")}
+            sub={
+              dashLine ? (
+                <span title="Nguồn: PostgreSQL — tính theo Work Order đang chạy">
+                  {dashLine.scope === "work_order"
+                    ? `theo WO ${activeWo?.woCode ?? ""}`
+                    : "theo ca (chưa có lệnh)"}
+                </span>
+              ) : undefined
+            }
           />
           <KpiCard
             label={t("availability")}
@@ -170,6 +198,17 @@ export function LineView({
             sub="Good Count / Total Count"
           />
         </div>
+
+        {/* ── Work Order đang chạy (nhấn để xem chi tiết) ────────────── */}
+        <ActiveWorkOrderPanel
+          lineId={lineId}
+          workOrder={activeWo}
+          counts={dashLine?.counts ?? null}
+          progressRatio={dashLine?.progressRatio ?? null}
+          elapsedSec={dashLine?.plannedSec ?? null}
+          onOpen={onOpenWoExecution}
+        />
+
         <div className="lh-progress">
           <div className="lh-progress-head">
             <span>Shift Output</span>
@@ -367,6 +406,119 @@ export function LineView({
       </section>
     </div>
   );
+}
+
+// ── Work Order đang chạy của line ───────────────────────────────────────
+/**
+ * Panel hiển thị lệnh sản xuất ĐANG CHẠY của chuyền + số liệu của lệnh.
+ *
+ * ⚠ VÌ SAO CẦN:
+ *   Người vận hành ở màn Line phải thấy ngay "chuyền này đang chạy lệnh nào,
+ *   lệnh đó đã đạt bao nhiêu" — và bấm vào để mở màn thực thi (A3).
+ *
+ *   Số liệu lấy từ PostgreSQL, TÍNH THEO LỆNH (khoảng
+ *   [actual_start, actual_end ?? now)) → đổi lệnh là số đổi theo.
+ */
+function ActiveWorkOrderPanel({
+  lineId,
+  workOrder,
+  counts,
+  progressRatio,
+  elapsedSec,
+  onOpen,
+}: {
+  lineId: string;
+  workOrder: {
+    woId: string;
+    woCode: string;
+    productId: string;
+    status: string;
+    plannedQty: number | null;
+    actualStartTime: string | null;
+  } | null;
+  counts: { total: number; good: number; defect: number; reject: number } | null;
+  progressRatio: number | null;
+  elapsedSec: number | null;
+  onOpen?: (woId: string) => void;
+}) {
+  if (!workOrder) {
+    return (
+      <div className="lh-wo lh-wo-empty">
+        <div className="lh-wo-head">
+          <span className="lh-wo-title">Work Order</span>
+        </div>
+        <div className="lh-wo-empty-text">
+          Chuyền {lineId} chưa có lệnh sản xuất đang chạy — OEE hiển thị theo ca.
+        </div>
+      </div>
+    );
+  }
+
+  const actual = counts?.total ?? 0;
+  const planned = workOrder.plannedQty ?? 0;
+  const ratio = progressRatio ?? (planned > 0 ? actual / planned : null);
+  const reject = counts?.reject ?? 0;
+
+  return (
+    <button
+      className="lh-wo"
+      onClick={() => onOpen?.(workOrder.woId)}
+      disabled={!onOpen}
+      aria-label={`Mở chi tiết Work Order ${workOrder.woCode}`}
+    >
+      <div className="lh-wo-head">
+        <span className="lh-wo-title">Work Order đang chạy</span>
+        <span className="lh-wo-code mono">{workOrder.woCode}</span>
+      </div>
+      <div className="lh-wo-body">
+        <div className="lh-wo-qty">
+          <div className="lh-wo-qty-block">
+            <span>Thực tế</span>
+            <strong className="num">{fmtInt(actual)}</strong>
+          </div>
+          <div className="lh-wo-qty-block">
+            <span>Kế hoạch</span>
+            <strong className="num">{fmtInt(planned)}</strong>
+          </div>
+          <div className="lh-wo-qty-block lh-wo-good">
+            <span>Good</span>
+            <strong className="num">{fmtInt(counts?.good ?? 0)}</strong>
+          </div>
+          <div className="lh-wo-qty-block lh-wo-ng">
+            <span>NG</span>
+            <strong className="num">{fmtInt(reject)}</strong>
+          </div>
+        </div>
+        {ratio != null && (
+          <div className="lh-wo-progress">
+            <div className="lh-wo-progress-track">
+              <div
+                className="lh-wo-progress-fill"
+                style={{ width: `${Math.min(100, Math.max(0, ratio * 100))}%` }}
+              />
+            </div>
+            <span className="lh-wo-progress-text num">{pct(ratio, 1)}</span>
+          </div>
+        )}
+        <div className="lh-wo-foot">
+          <span>
+            Bắt đầu {fmtClock(workOrder.actualStartTime)} · chạy{" "}
+            {elapsedSec ? fmtDurationShort(elapsedSec) : "—"}
+          </span>
+          <span className="lh-wo-go">
+            Xem chi tiết <ChevronRight size={13} aria-hidden="true" />
+          </span>
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/** Thời lượng ngắn gọn: 2h05 hoặc 45m. */
+function fmtDurationShort(sec: number): string {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  return h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m}m`;
 }
 
 // ── Line switcher (dropdown chuyển line) ────────────────────────────────

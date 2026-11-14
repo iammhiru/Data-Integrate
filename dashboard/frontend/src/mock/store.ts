@@ -26,6 +26,7 @@ import {
 import { computeOee, yieldRate, availabilityOf, performanceOf, idealCycleFromDesignSpeed } from "./domain/oee";
 import { shiftOf } from "./domain/shift";
 import type { MasterData, MasterLine } from "./master-data";
+import type { Dashboard } from "./analytics-api";
 
 export type LineMeta = {
   lineId: string;
@@ -138,6 +139,13 @@ export type TelemetryStore = {
   source: TelemetrySource;
   /** Master data đang dùng (null = chưa tải / fallback). */
   master: MasterData | null;
+  /**
+   * KPI dashboard đọc từ PostgreSQL (`machine_kpi_1m`), TÍNH THEO WORK ORDER
+   * đang chạy. `null` = chưa tải được → UI dùng số liệu tự tính (fallback).
+   *
+   * ⚠ Đây là nguồn sự thật của OEE/A/P/Q từ 14/11/2026. Xem `analytics-api.ts`.
+   */
+  dashboard: Dashboard | null;
 };
 
 function machineView(
@@ -198,7 +206,10 @@ function machineView(
  *   còn Planned Production Time = planned × số máy → Availability ≤ 1.
  *
  * ⚠ Trong mock: bộ đếm được coi là sản lượng TÍCH LUỸ của ca.
- *    Khi tích hợp thật, OEE/sản lượng phải lấy từ API (Spark/PG).
+ *    ⚠ TỪ 14/11/2026: hàm này chỉ là FALLBACK. Nguồn sự thật của OEE/A/P/Q
+ *      là PostgreSQL (`state-api /api/analytics/dashboard`), TÍNH THEO WORK
+ *      ORDER đang chạy — xem `analytics-api.ts`. Số ở đây dùng cửa sổ
+ *      "từ lúc mở WebSocket" nên lệch hệ thống (gây OEE 2–4%).
  */
 function computeLineOee(
   machines: MachineStateView[],
@@ -274,6 +285,7 @@ function computeLineOee(
 export function buildStore(
   source: TelemetrySource,
   master: MasterData | null = null,
+  dashboard: Dashboard | null = null,
 ): TelemetryStore {
   const reading = source.read();
   const nowMs = Date.now();
@@ -287,17 +299,35 @@ export function buildStore(
       ? master.lines.map((l) => l.lineId)
       : ["LINE_01", "LINE_02", "LINE_03"];
 
+  /** KPI của 1 line từ PostgreSQL (null = chưa có dữ liệu). */
+  const dashLine = (lineId: string) =>
+    dashboard?.lines.find((l) => l.lineId === lineId) ?? null;
+
   const lines: LineView[] = lineIds.map((lineId) => {
     const ms = machines.filter((m) => m.def.lineId === lineId);
     const masterLine = master?.lines.find((l) => l.lineId === lineId);
-    const { oee, output } = computeLineOee(
-      ms,
-      nowMs,
-      source,
-      reading,
-      masterLine,
-    );
+    const computed = computeLineOee(ms, nowMs, source, reading, masterLine);
     const meta: LineMeta = lineMetaFromMaster(master, lineId, shiftOf().label);
+
+    // ── ƯU TIÊN SỐ TỪ PostgreSQL ────────────────────────────────────
+    // OEE/A/P/Q lấy từ batch (tính theo WORK ORDER đang chạy). Số liệu tự
+    // tính trong browser chỉ là FALLBACK khi PG chưa sẵn sàng — vì nó dùng
+    // cửa sổ "từ lúc mở WebSocket" nên lệch với hệ thống (đã gây OEE 2–4%).
+    const dl = dashLine(lineId);
+    const oee =
+      dl && dl.oee != null
+        ? {
+            availability: dl.availability ?? 0,
+            performance: dl.performance ?? 0,
+            quality: dl.quality ?? 0,
+            oee: dl.oee,
+          }
+        : computed.oee;
+    const output =
+      dl && dl.counts
+        ? { good: dl.counts.good, total: dl.counts.total }
+        : computed.output;
+
     return {
       meta,
       machines: ms,
@@ -321,6 +351,7 @@ export function buildStore(
     byId: (id) => byIdMap.get(id),
     source,
     master,
+    dashboard,
   };
 }
 
